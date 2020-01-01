@@ -14,6 +14,7 @@ def reward_func(mazes, model):
         for maze in mazes:
             reward += run_maze(model, maze)
         return reward / len(mazes)
+    return get_reward
 
 
 if __name__ == '__main__':
