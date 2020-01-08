@@ -1,11 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from daedalus import Maze
-
-WALL = 1
-OPEN = 0
-UNSEEN = -1
-USER_POS = 999
+from .maze_consts import WALL,USER_POS, OPEN, UNSEEN
 
 
 def _get_maze_at_pos(maze: np.array, pos: (int, int)):
@@ -90,7 +86,8 @@ def look_down(maze: np.array, full_maze: np.array, pos: [int, int]):
     return maze
 
 
-def update_maze(current_maze: np.array, full_maze: np.array, new_pos: [int, int], old_pos: [int, int]):
+def update_maze(current_maze: np.array, full_maze: np.array,
+                new_pos: [int, int], old_pos: [int, int]):
     # current_maze = _set_maze_at_post(current_maze, old_pos, _get_maze_at_pos(full_maze, old_pos))
     _revel_in_pos(current_maze, full_maze, old_pos)
     # current_maze[old_pos[0]][old_pos[1]]=_get_maze_at_pos(full_maze,old_pos)
@@ -110,14 +107,16 @@ def update_maze(current_maze: np.array, full_maze: np.array, new_pos: [int, int]
 """
 
 
-def make_maze(size, func):
+def make_maze(size):
     real_maze = Maze(*size)
-    func(real_maze, nEntrancePos=0, nRndBias=2)
+    Maze.create_perfect(real_maze, nEntrancePos=0, nRndBias=2)
     known_maze = np.ndarray(shape=(size[0],size[1]),dtype=int)
     known_maze.fill(UNSEEN)
     # m = Maze.create_perfect(maze, nEntrancePos=0, nRndBias=2)
     arr = np.array(list(real_maze))
-    update_maze(known_maze,arr,list(real_maze.entrance),list(real_maze.entrance))
+    update_maze(known_maze,arr,
+                list(real_maze.entrance),
+                list(real_maze.entrance))
     # makr_entrance(arr, real_maze.entrance)
 
     return arr
@@ -134,7 +133,7 @@ def show_maze(maze):
 
 def main():
     SIZE = 31
-    m = make_maze((SIZE, SIZE), Maze.create_perfect)
+    m = make_maze((SIZE, SIZE))
     show_maze(m)
 
 
