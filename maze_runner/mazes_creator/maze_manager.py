@@ -107,9 +107,9 @@ def update_maze(current_maze: np.array, full_maze: np.array,
 """
 
 
-def make_maze(size):
+def make_maze(size, seed):
     real_maze = Maze(*size)
-    Maze.create_perfect(real_maze, nEntrancePos=0, nRndBias=2)
+    Maze.create_perfect(real_maze, nEntrancePos=0, nRndBias=seed)
     known_maze = np.ndarray(shape=(size[0],size[1]),dtype=int)
     known_maze.fill(UNSEEN)
     # m = Maze.create_perfect(maze, nEntrancePos=0, nRndBias=2)
@@ -118,8 +118,7 @@ def make_maze(size):
                 list(real_maze.entrance),
                 list(real_maze.entrance))
     # makr_entrance(arr, real_maze.entrance)
-
-    return arr
+    return known_maze, arr
 
 
 def show_maze(maze):
