@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from daedalus import Maze
+from daedalus._maze import init_random
+
 from .maze_consts import WALL,USER_POS, OPEN, UNSEEN
 
 
@@ -39,7 +41,7 @@ def look_left(maze: np.array, full_maze: np.array, pos: (int, int)):
         current_val = _get_maze_at_pos(maze, current_pos)
     except:
         return maze
-    while current_val != UNSEEN:
+    while current_val == UNSEEN or current_val == OPEN:
         if current_pos[0] <0:
             break
         if _get_maze_at_pos(full_maze,current_pos)==WALL:
@@ -55,7 +57,7 @@ def look_right(maze: np.array, full_maze: np.array, pos: (int, int)):
         current_val = _get_maze_at_pos(maze, current_pos)
     except:
         return maze
-    while current_val != UNSEEN:
+    while current_val == UNSEEN or current_val == OPEN:
         if current_pos[0] >= len(maze):
             break
         if _get_maze_at_pos(full_maze,current_pos)==WALL:
@@ -72,7 +74,7 @@ def look_up(maze: np.array, full_maze: np.array, pos: [int, int]):
         current_val = _get_maze_at_pos(maze, current_pos)
     except:
         return maze
-    while current_val == UNSEEN:
+    while current_val == UNSEEN or current_val == OPEN:
         if current_pos[1] < 0:
             break
         if _get_maze_at_pos(full_maze,current_pos)==WALL:
@@ -89,7 +91,7 @@ def look_down(maze: np.array, full_maze: np.array, pos: [int, int]):
         current_val = _get_maze_at_pos(maze, current_pos)
     except:
         return maze
-    while current_val == UNSEEN:
+    while current_val == UNSEEN or current_val == OPEN:
         if current_pos[1] >= len(maze):
             break
         if _get_maze_at_pos(full_maze,current_pos)==WALL:
@@ -123,7 +125,8 @@ def update_maze(current_maze: np.array, full_maze: np.array,
 
 def make_maze(size, seed):
     real_maze = Maze(*size)
-    Maze.create_perfect(real_maze, nEntrancePos=0, nRndBias=seed)
+    init_random(seed)
+    Maze.create_perfect2(real_maze, nEntrancePos=0)
     known_maze = np.ndarray(shape=(size[0],size[1]),dtype=int)
     known_maze.fill(UNSEEN)
     # m = Maze.create_perfect(maze, nEntrancePos=0, nRndBias=2)
