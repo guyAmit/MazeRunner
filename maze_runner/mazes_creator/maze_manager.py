@@ -113,12 +113,12 @@ def make_maze(size, seed):
     known_maze = np.ndarray(shape=(size[0],size[1]),dtype=int)
     known_maze.fill(UNSEEN)
     # m = Maze.create_perfect(maze, nEntrancePos=0, nRndBias=2)
-    arr = np.array(list(real_maze))
-    update_maze(known_maze,arr,
+    full_mze = np.array(list(real_maze))
+    update_maze(known_maze,full_mze,
                 list(real_maze.entrance),
                 list(real_maze.entrance))
     # makr_entrance(arr, real_maze.entrance)
-    return known_maze, arr
+    return known_maze, full_mze
 
 
 def show_maze(maze):
