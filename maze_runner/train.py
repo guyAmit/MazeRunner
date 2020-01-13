@@ -13,14 +13,18 @@ def run_maze(model, maze):
     score = 0
     for i in range(MAX_STEPS):
         pred = np.array(model.predict(current_maze))
-        if np.sum(current_maze[curr_pos+pred] == MAZE_ENDING)==2:
-            score -=1
-            return score
-        elif current_maze[curr_pos+pred] == WALL:
-            score+=2
-        else:
-            curr_pos += pred
-            score+=1
+        # if np.sum(current_maze[curr_pos+pred] == MAZE_ENDING)==2:
+        try:
+            if np.sum(current_maze[curr_pos[0] + pred][curr_pos[1]+pred] == MAZE_ENDING) == 2:
+                score -=1
+                return score
+            elif current_maze[curr_pos[0] + pred][curr_pos[1]+pred] == WALL:
+                score+=2
+            else:
+                curr_pos += pred
+                score+=1
+        except IndexError as e:
+            return 999
         update_maze(current_maze, full_maze, curr_pos+pred, curr_pos)
     return score
 
@@ -35,7 +39,7 @@ def reward_func(mazes, model):
 
 
 if __name__ == '__main__':
-    mazes = [make_maze(MAZE_SIZE,2) for i in range(TRAINSET_SIZE)]
+    mazes = [make_maze(MAZE_SIZE,i) for i in range(TRAINSET_SIZE)]
     model = Model(fillters_number=10, dense_size=10, img_size=28)
     es = EvolutionStrategy(model.get_weights, reward_func(mazes, model))
     es.run(iterations=100, print_step=1)

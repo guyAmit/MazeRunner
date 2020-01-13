@@ -9,6 +9,8 @@ def _get_maze_at_pos(maze: np.array, pos: (int, int)):
 
 
 def _set_maze_at_post(maze: np.array, pos: (int, int), val: int):
+    if pos[1]>=len(maze) or pos[0]>=len(maze):
+        return maze
     maze[pos[0]][pos[1]] = val
     return maze
 
@@ -33,7 +35,10 @@ def _revel_in_pos(new_maze, old_maze, pos):
 def look_left(maze: np.array, full_maze: np.array, pos: (int, int)):
     current_pos = np.copy(pos)
     current_pos[0] -= 1
-    current_val = _get_maze_at_pos(maze, current_pos)
+    try:
+        current_val = _get_maze_at_pos(maze, current_pos)
+    except:
+        return maze
     while current_val != UNSEEN:
         if current_pos[0] <0:
             break
@@ -46,7 +51,10 @@ def look_left(maze: np.array, full_maze: np.array, pos: (int, int)):
 def look_right(maze: np.array, full_maze: np.array, pos: (int, int)):
     current_pos = np.copy(pos)
     current_pos[0] += 1
-    current_val = _get_maze_at_pos(maze, current_pos)
+    try:
+        current_val = _get_maze_at_pos(maze, current_pos)
+    except:
+        return maze
     while current_val != UNSEEN:
         if current_pos[0] >= len(maze):
             break
@@ -60,7 +68,10 @@ def look_right(maze: np.array, full_maze: np.array, pos: (int, int)):
 def look_up(maze: np.array, full_maze: np.array, pos: [int, int]):
     current_pos = np.copy(pos)
     current_pos[1] -= 1  # go one down
-    current_val = _get_maze_at_pos(maze, current_pos)
+    try:
+        current_val = _get_maze_at_pos(maze, current_pos)
+    except:
+        return maze
     while current_val == UNSEEN:
         if current_pos[1] < 0:
             break
@@ -74,7 +85,10 @@ def look_up(maze: np.array, full_maze: np.array, pos: [int, int]):
 def look_down(maze: np.array, full_maze: np.array, pos: [int, int]):
     current_pos = np.copy(pos)
     current_pos[1] += 1  # go one down
-    current_val = _get_maze_at_pos(maze, current_pos)
+    try:
+        current_val = _get_maze_at_pos(maze, current_pos)
+    except:
+        return maze
     while current_val == UNSEEN:
         if current_pos[1] >= len(maze):
             break
