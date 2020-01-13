@@ -14,17 +14,16 @@ def run_maze(model, maze):
     for i in range(MAX_STEPS):
         pred = np.array(model.predict(current_maze))
         # if np.sum(current_maze[curr_pos+pred] == MAZE_ENDING)==2:
-        try:
-            if np.sum(current_maze[curr_pos[0] + pred][curr_pos[1]+pred] == MAZE_ENDING) == 2:
-                score -=1
-                return score
-            elif current_maze[curr_pos[0] + pred][curr_pos[1]+pred] == WALL:
-                score+=2
-            else:
-                curr_pos += pred
-                score+=1
-        except IndexError as e:
-            return 999
+        if curr_pos[0]>=len(current_maze) or curr_pos[1]>=len(current_maze) or curr_pos[0]<0 or curr_pos[1]<0:
+            score+=4
+        if np.sum(current_maze[curr_pos[0] + pred][curr_pos[1]+pred] == MAZE_ENDING) == 2:
+            score -=1
+            return score
+        elif current_maze[curr_pos[0] + pred][curr_pos[1]+pred] == WALL:
+            score+=2
+        else:
+            curr_pos += pred
+            score+=1
         update_maze(current_maze, full_maze, curr_pos+pred, curr_pos)
     return score
 
