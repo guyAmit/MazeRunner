@@ -70,10 +70,9 @@ class Model():
         if pred is 1:
             return (-1, 0)
         if pred is 2:
-                return (0, 1)
+            return (0, 1)
         if pred is 3:
-                return (0, -1)
-
+            return (0, -1)
 
     def predict(self, img):
         out1 = conv2d(img, self.weights[0], mode='same')
@@ -82,7 +81,7 @@ class Model():
         out3 = np.matmul(self.weights[1], out2.T)
         out3[out3 < 0] = 0  # relu
         out4 = softmax(self.weights[2].dot(out3))
-        return np.argmax(out4)
+        return _convert_to_directions(np.argmax(out4).reshape(-1))
 
     def get_weights(self):
         return self.weights

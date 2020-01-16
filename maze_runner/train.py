@@ -5,27 +5,31 @@ from mazes_creator.maze_consts import STRARTING_POSINGTION, WALL, MAZE_ENDING
 from consts import TESTSET_SIZE, TRAINSET_SIZE, MAZE_SIZE, MAX_STEPS
 import numpy as np
 
+
 def run_maze(model, maze):
     current_maze = maze[0]
     full_maze = maze[1]
     curr_pos = np.array(STRARTING_POSINGTION)
-    # curr_maze = []
     score = 0
     for i in range(MAX_STEPS):
         pred = np.array(model.predict(current_maze))
-        # if np.sum(current_maze[curr_pos+pred] == MAZE_ENDING)==2:
-        if curr_pos[0]>=len(current_maze) or curr_pos[1]>=len(current_maze) or curr_pos[0]<0 or curr_pos[1]<0:
-            score+=4
-        if np.sum(current_maze[curr_pos[0] + pred][curr_pos[1]+pred] == MAZE_ENDING) == 2:
-            score -=1
+        if (curr_pos[0] >= current_maze.shape[0] or
+            curr_pos[1] >= current_maze.shape[1] or
+                curr_pos[0] < 0 or curr_pos[1] < 0):
+            score += 4  # out of maze
+        if (current_maze[curr_pos[0] + pred[0], curr_pos[1]+pred[1]]
+                == MAZE_ENDING):
+            score -= 1  # maze ending
             return score
-        elif current_maze[curr_pos[0] + pred][curr_pos[1]+pred] == WALL:
-            score+=2
+        elif current_maze[curr_pos[0] + pred[0], curr_pos[1]+pred[0]] == WALL:
+            score += 2  # run into wall
         else:
-            curr_pos += pred
-            score+=1
+            curr_pos[0] += pred[0]
+            curr_pos[1] += pred[1]
+            score += 1
         update_maze(current_maze, full_maze, curr_pos+pred, curr_pos)
     return score
+
 
 def reward_func(mazes, model):
     def get_reward(weights):
@@ -38,7 +42,7 @@ def reward_func(mazes, model):
 
 
 if __name__ == '__main__':
-    mazes = [make_maze(MAZE_SIZE,i) for i in range(TRAINSET_SIZE)]
+    mazes = [make_maze(MAZE_SIZE, i) for i in range(TRAINSET_SIZE)]
     model = Model(fillters_number=10, dense_size=10, img_size=28)
     es = EvolutionStrategy(model.get_weights, reward_func(mazes, model))
     es.run(iterations=100, print_step=1)
