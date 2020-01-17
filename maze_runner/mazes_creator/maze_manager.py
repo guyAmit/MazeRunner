@@ -1,9 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from daedalus import Maze
-from daedalus._maze import init_random
+# from daedalus import Maze
+# from daedalus._maze import init_random
 
-from maze_consts import WALL, USER_POS, OPEN, UNSEEN
+from .maze_consts import WALL, USER_POS, OPEN, UNSEEN
 
 
 def _get_maze_at_pos(maze: np.array, pos: (int, int)):
@@ -119,7 +119,7 @@ def update_maze(current_maze: np.array, full_maze: np.array,
     look_right(current_maze, full_maze, new_pos)
     look_left(current_maze, full_maze, new_pos)
     look_up(current_maze, full_maze, new_pos)
-    # current_maze[new_pos[0]][new_pos[1]] = USER_POS
+    current_maze[new_pos[0]][new_pos[1]] = USER_POS
 
 
 """
@@ -144,10 +144,12 @@ def make_maze(size, seed):
     # makr_entrance(arr, real_maze.entrance)
     return known_maze, full_maze
 
+
 def make_maze_from_file(index):
-    m = np.load('mazes.npy')
+    m = np.load('mazes_creator//mazes.npy')
     known, full = m[index]
-    return known,full
+    return known, full
+
 
 def show_maze(maze):
     print('Maze entrance: {}'.format(maze.entrance))

@@ -12,10 +12,9 @@ def conv2d(img, fillters, mode='same'):
 
 
 def build_model(fillters_number, dense_size, img_size, max_stride, max_size):
-    fillters = (np.sqrt(2 / fillters_number) *
-                np.random.randn(fillters_number, 3, 3))
+    fillters = np.random.rand(fillters_number, 3, 3)
 
-    dense1 = np.sqrt((2 / (+dense_size))) * \
+    dense1 = np.sqrt((2 / (dense_size))) * \
         np.random.randn(dense_size,
                         fillters_number*int(
                                            (int(
@@ -23,7 +22,7 @@ def build_model(fillters_number, dense_size, img_size, max_stride, max_size):
                                                max_stride)+1)**2))
     dense2 = np.sqrt((2/(dense_size+4)))*np.random.randn(4,
                                                          dense_size)
-    weights = [fillters, dense1, dense2]
+    weights = [np.array(x) for x in fillters.tolist()]+[dense1, dense2]
     return weights
 
 
@@ -54,6 +53,18 @@ def pooling(feature_map, size=2, stride=2):
     return pool_out
 
 
+def convert_to_directions(pred):
+    if pred == 0:
+        return (1, 0)
+    if pred == 1:
+        return (-1, 0)
+    if pred == 2:
+        return (0, 1)
+    if pred == 3:
+        return (0, -1)
+    return
+
+
 class Model():
 
     def __init__(self, fillters_number, dense_size, img_size):
@@ -64,24 +75,16 @@ class Model():
                                    dense_size, img_size,
                                    max_stride=2, max_size=2)
 
-    def _convert_to_directions(pred):
-        if pred is 0:
-            return (1, 0)
-        if pred is 1:
-            return (-1, 0)
-        if pred is 2:
-            return (0, 1)
-        if pred is 3:
-            return (0, -1)
-
     def predict(self, img):
-        out1 = conv2d(img, self.weights[0], mode='same')
+        out1 = conv2d(img, np.array(self.weights[:self.fillters_number]),
+                      mode='same')
         out2 = pooling(out1)
         out2 = out2.reshape(1, -1)
-        out3 = np.matmul(self.weights[1], out2.T)
-        out3[out3 < 0] = 0  # relu
-        out4 = softmax(self.weights[2].dot(out3))
-        return _convert_to_directions(np.argmax(out4).reshape(-1))
+        out3 = np.matmul(self.weights[self.fillters_number], out2.T)
+        # out3[out3 < 0] = 0  # relu
+        out4 = softmax(self.weights[self.fillters_number+1].dot(out3))
+        idx = np.argmax(out4)
+        return convert_to_directions(idx)
 
     def get_weights(self):
         return self.weights
