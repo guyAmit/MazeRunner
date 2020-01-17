@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from daedalus import Maze
-from daedalus._maze import init_random
+# from daedalus import Maze
+# from daedalus._maze import init_random
 
 # from maze_consts import
 
@@ -28,8 +28,8 @@ def _revel_in_1_pos(new_maze, old_maze, pos):
 def _revel_in_pos(new_maze, old_maze, pos):
     val = _get_maze_at_pos(old_maze, pos)
     maze = _set_maze_at_post(new_maze, pos, val)
-    if _get_maze_at_pos(old_maze,pos)==WALL:
-        _revel_in_1_pos(new_maze,old_maze,pos)
+    if _get_maze_at_pos(old_maze, pos) == WALL:
+        _revel_in_1_pos(new_maze, old_maze, pos)
         return new_maze
     if pos[0] > 0:
         _revel_in_1_pos(new_maze, old_maze, [pos[0]-1, pos[1]])
@@ -143,11 +143,11 @@ def make_maze(size, seed):
     known_maze.fill(UNSEEN)
     # m = Maze.create_perfect(maze, nEntrancePos=0, nRndBias=2)
     full_maze = np.array(list(real_maze))
-    full_maze[0,0]=OPEN
-    full_maze[real_maze.exit[0],real_maze.exit[1]]=END
+    full_maze[0, 0] = OPEN
+    full_maze[real_maze.exit[0], real_maze.exit[1]] = END
     update_maze(known_maze, full_maze,
-                [0,0],
-                [0,0])
+                [0, 0],
+                [0, 0])
     # makr_entrance(arr, real_maze.entrance)
     return known_maze, full_maze
 
@@ -178,9 +178,9 @@ if __name__ == '__main__':
     # m = np.load('mazes.npy')
     pass
     for i in range(100):
-        known, full =make_maze((30,30),i)
+        known, full = make_maze((30, 30), i)
         # np.save
         # np.save(f'{i}_{known}.npy',)
-        mazes.append((known,full))
+        mazes.append((known, full))
 
-    np.save('mazes',mazes)
+    np.save('mazes', mazes)

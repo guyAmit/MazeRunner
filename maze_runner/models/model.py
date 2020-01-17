@@ -19,7 +19,7 @@ def build_model(fillters_number, dense_size, img_size, max_stride, max_size):
                         fillters_number*int(
                                            (int(
                                                (img_size-max_size+1) /
-                                               max_stride)+1)**2))
+                                               max_stride)+1)**2)+1)
     dense2 = np.sqrt((2/(dense_size+4)))*np.random.randn(4,
                                                          dense_size)
     weights = [np.array(x) for x in fillters.tolist()]+[dense1, dense2]
@@ -28,7 +28,7 @@ def build_model(fillters_number, dense_size, img_size, max_stride, max_size):
 
 def softmax(x):
     exps = np.exp(x)
-    sums = np.sum(exps, axis=0, keepdims=True)
+    sums = np.sum(exps, axis=0, keepdims=True)+1e-10
     return exps/sums
 
 
@@ -75,14 +75,18 @@ class Model():
                                    dense_size, img_size,
                                    max_stride=2, max_size=2)
 
-    def predict(self, img):
+    def predict(self, img, last_score):
+        img = img / 255
         out1 = conv2d(img, np.array(self.weights[:self.fillters_number]),
                       mode='same')
         out2 = pooling(out1)
         out2 = out2.reshape(1, -1)
-        out3 = np.matmul(self.weights[self.fillters_number], out2.T)
-        # out3[out3 < 0] = 0  # relu
-        out4 = softmax(self.weights[self.fillters_number+1].dot(out3))
+        out3 = np.matmul(self.weights[self.fillters_number],
+                         np.concatenate((
+                             out2.T, np.array([[last_score]])), axis=0))
+        out3[out3 < 0] = 0  # relu
+        z = self.weights[self.fillters_number+1].dot(out3)
+        out4 = softmax(z)
         idx = np.argmax(out4)
         return convert_to_directions(idx)
 

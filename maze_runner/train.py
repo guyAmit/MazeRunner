@@ -16,19 +16,21 @@ def run_maze(model, maze):
     curr_pos = np.array(STRARTING_POSINGTION)
     prev_pos = curr_pos.copy()
     score = 0
+    iligal_move = 0
     for i in range(MAX_STEPS):
-        pred = model.predict(current_maze)
+        pred = model.predict(current_maze, iligal_move)
+        iligal_move = 0
         if current_maze[curr_pos[0] + pred[0], curr_pos[1]+pred[1]] == END:
-        # if (curr_pos[0] + pred[0] == MAZE_ENDING[0] and
-        #         curr_pos[1]+pred[1] == MAZE_ENDING[1]):
             score -= 4  # maze ending bonus
             return score
         elif current_maze[curr_pos[0] + pred[0], curr_pos[1]+pred[1]] == WALL:
             score += 2  # run into wall
+            iligal_move = 1
         elif (curr_pos[0] + pred[0] >= current_maze.shape[0] or
               curr_pos[1] + pred[1] >= current_maze.shape[1] or
                 curr_pos[0] + pred[0] < 0 or curr_pos[1] + pred[1] < 0):
             score += 4  # out of maze
+            iligal_move = 1
         else:
             score += 1
             prev_pos = curr_pos.copy()
@@ -37,9 +39,6 @@ def run_maze(model, maze):
 
         update_maze(current_maze, full_maze, new_pos=curr_pos,
                     old_pos=prev_pos)
-        # a = np.array(list(current_maze))
-        # plt.imshow(-a)
-        # plt.show()
     return score
 
 
@@ -56,10 +55,11 @@ def reward_func(mazes, model):
 if __name__ == '__main__':
     mazes = [make_maze_from_file(i) for i in range(TRAINSET_SIZE)]
     model = Model(fillters_number=10, dense_size=10, img_size=MAZE_SIZE[0])
+
     weights = model.get_weights()
     es = EvolutionStrategy(weights, reward_func(mazes, model),
-                           population_size=100, sigma=0.2,
-                           learning_rate=0.3, num_threads=1)
+                           population_size=55, sigma=0.5,
+                           learning_rate=0.15, num_threads=1)
 
-    es.run(iterations=10, print_step=1)
+    es.run(iterations=30, print_step=1)
     model.save()
