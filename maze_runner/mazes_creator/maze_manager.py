@@ -3,7 +3,7 @@ import numpy as np
 from daedalus import Maze
 from daedalus._maze import init_random
 
-from .maze_consts import WALL, USER_POS, OPEN, UNSEEN
+from maze_consts import WALL, USER_POS, OPEN, UNSEEN
 
 
 def _get_maze_at_pos(maze: np.array, pos: (int, int)):
@@ -144,6 +144,10 @@ def make_maze(size, seed):
     # makr_entrance(arr, real_maze.entrance)
     return known_maze, full_maze
 
+def make_maze_from_file(index):
+    m = np.load('mazes.npy')
+    known, full = m[index]
+    return known,full
 
 def show_maze(maze):
     print('Maze entrance: {}'.format(maze.entrance))
@@ -154,11 +158,20 @@ def show_maze(maze):
     pass
 
 
-def main():
-    SIZE = 31
-    m = make_maze((SIZE, SIZE), 1)
-    show_maze(m)
+# def main():
+#     SIZE = 31
+#     m = make_maze((SIZE, SIZE), 1)
+#     show_maze(m)
 
 
 if __name__ == '__main__':
-    main()
+    mazes = []
+    m = np.load('mazes.npy')
+    pass
+    # for i in range(100):
+    #     known, full =make_maze((30,30),i)
+    #     # np.save
+    #     # np.save(f'{i}_{known}.npy',)
+    #     mazes.append((known,full))
+    #
+    # np.save('mazes',mazes)
