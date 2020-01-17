@@ -1,9 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
-# from daedalus import Maze
-# from daedalus._maze import init_random
+from daedalus import Maze
+from daedalus._maze import init_random
 
-from .maze_consts import WALL, USER_POS, OPEN, UNSEEN
+# from maze_consts import
+
+from mazes_creator.maze_consts import WALL, USER_POS, OPEN, UNSEEN, END
 
 
 def _get_maze_at_pos(maze: np.array, pos: (int, int)):
@@ -26,6 +28,9 @@ def _revel_in_1_pos(new_maze, old_maze, pos):
 def _revel_in_pos(new_maze, old_maze, pos):
     val = _get_maze_at_pos(old_maze, pos)
     maze = _set_maze_at_post(new_maze, pos, val)
+    if _get_maze_at_pos(old_maze,pos)==WALL:
+        _revel_in_1_pos(new_maze,old_maze,pos)
+        return new_maze
     if pos[0] > 0:
         _revel_in_1_pos(new_maze, old_maze, [pos[0]-1, pos[1]])
     if pos[1] > 0:
@@ -48,7 +53,7 @@ def look_left(maze: np.array, full_maze: np.array, pos: (int, int)):
         if current_pos[0] < 0:
             break
         if _get_maze_at_pos(full_maze, current_pos) == WALL:
-            maze = _revel_in_pos(maze, full_maze, current_pos)
+            maze = _revel_in_1_pos(maze, full_maze, current_pos)
             break
         maze = _revel_in_pos(maze, full_maze, current_pos)
         current_pos[0] -= 1
@@ -66,7 +71,7 @@ def look_right(maze: np.array, full_maze: np.array, pos: (int, int)):
         if current_pos[0] >= len(maze):
             break
         if _get_maze_at_pos(full_maze, current_pos) == WALL:
-            maze = _revel_in_pos(maze, full_maze, current_pos)
+            maze = _revel_in_1_pos(maze, full_maze, current_pos)
             break
         maze = _revel_in_pos(maze, full_maze, current_pos)
         current_pos[0] += 1
@@ -84,7 +89,7 @@ def look_up(maze: np.array, full_maze: np.array, pos: [int, int]):
         if current_pos[1] < 0:
             break
         if _get_maze_at_pos(full_maze, current_pos) == WALL:
-            maze = _revel_in_pos(maze, full_maze, current_pos)
+            maze = _revel_in_1_pos(maze, full_maze, current_pos)
             break
         maze = _revel_in_pos(maze, full_maze, current_pos)
         current_pos[1] -= 1
@@ -102,7 +107,7 @@ def look_down(maze: np.array, full_maze: np.array, pos: [int, int]):
         if current_pos[1] >= len(maze):
             break
         if _get_maze_at_pos(full_maze, current_pos) == WALL:
-            maze = _revel_in_pos(maze, full_maze, current_pos)
+            maze = _revel_in_1_pos(maze, full_maze, current_pos)
             break
         maze = _revel_in_pos(maze, full_maze, current_pos)
         current_pos[1] += 1
@@ -138,9 +143,11 @@ def make_maze(size, seed):
     known_maze.fill(UNSEEN)
     # m = Maze.create_perfect(maze, nEntrancePos=0, nRndBias=2)
     full_maze = np.array(list(real_maze))
+    full_maze[0,0]=OPEN
+    full_maze[real_maze.exit[0],real_maze.exit[1]]=END
     update_maze(known_maze, full_maze,
-                list(real_maze.entrance),
-                list(real_maze.entrance))
+                [0,0],
+                [0,0])
     # makr_entrance(arr, real_maze.entrance)
     return known_maze, full_maze
 
@@ -168,12 +175,12 @@ def show_maze(maze):
 
 if __name__ == '__main__':
     mazes = []
-    m = np.load('mazes.npy')
+    # m = np.load('mazes.npy')
     pass
-    # for i in range(100):
-    #     known, full =make_maze((30,30),i)
-    #     # np.save
-    #     # np.save(f'{i}_{known}.npy',)
-    #     mazes.append((known,full))
-    #
-    # np.save('mazes',mazes)
+    for i in range(100):
+        known, full =make_maze((30,30),i)
+        # np.save
+        # np.save(f'{i}_{known}.npy',)
+        mazes.append((known,full))
+
+    np.save('mazes',mazes)
