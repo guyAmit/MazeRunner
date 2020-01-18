@@ -135,9 +135,9 @@ def is_surrounded(maze:np.array,pos):
             return down
         if _get_maze_at_pos(maze,left)==WALL and _get_maze_at_pos(maze,down)==WALL and _get_maze_at_pos(maze,right)==WALL:
             return up
-        return pos
+        return None
     except:
-        return pos
+        return None
 def update_maze(current_maze: np.array, full_maze: np.array,
                 new_pos: [int, int], old_pos: [int, int]):
     updated_count =0
