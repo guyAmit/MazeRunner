@@ -11,35 +11,43 @@ import matplotlib.pyplot as plt
 
 def run_maze(model, maze):
     current_maze = maze[0]
-    current_maze[STRARTING_POSINGTION[0], STRARTING_POSINGTION[1]] = USER_POS
+    # current_maze[STRARTING_POSINGTION[0], STRARTING_POSINGTION[1]] = USER_POS
     full_maze = maze[1]
     curr_pos = np.array(STRARTING_POSINGTION)
     prev_pos = curr_pos.copy()
     score = 0
     iligal_move = 0
+    tiles_revield =0
     for i in range(MAX_STEPS):
         pred = model.predict(current_maze, iligal_move)
         iligal_move = 0
         if current_maze[curr_pos[0] + pred[0], curr_pos[1]+pred[1]] == END:
-            score -= 4  # maze ending bonus
-            return score
+            score -= 20  # maze ending bonus
+
         elif current_maze[curr_pos[0] + pred[0], curr_pos[1]+pred[1]] == WALL:
             score += 2  # run into wall
             iligal_move = 1
+
         elif (curr_pos[0] + pred[0] >= current_maze.shape[0] or
               curr_pos[1] + pred[1] >= current_maze.shape[1] or
                 curr_pos[0] + pred[0] < 0 or curr_pos[1] + pred[1] < 0):
             score += 4  # out of maze
             iligal_move = 1
+
         else:
             score += 1
             prev_pos = curr_pos.copy()
             curr_pos[0] += pred[0]
             curr_pos[1] += pred[1]
 
-        update_maze(current_maze, full_maze, new_pos=curr_pos,
-                    old_pos=prev_pos)
-    return score
+            new_tiels= update_maze(current_maze, full_maze, new_pos=curr_pos,
+                        old_pos=prev_pos)
+            tiles_revield+=new_tiels
+            if new_tiels>0:
+                print(f'current pos {curr_pos} revealed {new_tiels}')
+                plt.imshow(-np.array(list(current_maze)))
+                plt.show()
+    return score - tiles_revield
 
 
 def reward_func(mazes, model):
@@ -58,8 +66,8 @@ if __name__ == '__main__':
 
     weights = model.get_weights()
     es = EvolutionStrategy(weights, reward_func(mazes, model),
-                           population_size=55, sigma=0.5,
-                           learning_rate=0.15, num_threads=1)
+                           population_size=500, sigma=0.7,
+                           learning_rate=0.3, num_threads=1)
 
     es.run(iterations=30, print_step=1)
     model.save()
