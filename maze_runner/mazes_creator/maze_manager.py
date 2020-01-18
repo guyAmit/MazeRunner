@@ -127,10 +127,10 @@ def look_down(maze: np.array, full_maze: np.array, pos: [int, int]):
 
 
 def is_surrounded(maze: np.array, pos):
-    up = [pos[0], pos[1] + 1]
-    down = [pos[0], pos[1] - 1]
-    left = [pos[0] - 1, pos[1]]
-    right = [pos[0] + 1, pos[1]]
+    up = [pos[0]+1, pos[1]]
+    down = [pos[0]-1, pos[1]]
+    left = [pos[0], pos[1]-1]
+    right = [pos[0], pos[1]+1]
     try:
         if _get_maze_at_pos(maze, up) == WALL and _get_maze_at_pos(maze, down) == WALL and _get_maze_at_pos(maze,
                                                                                                             left) == WALL:
@@ -162,7 +162,7 @@ def is_dead_end_down(maze, pos, res=False):
         right_val = _get_maze_at_pos(maze, right_pos)
         if left_val == OPEN or right_val == OPEN:
             return True
-        return is_dead_end_down(maze, [pos[0], pos[1] + 1], res)
+        return is_dead_end_down(maze, [pos[0] + 1, pos[1]], res)
 
 
 def is_dead_end_up(maze, pos, res=False):
@@ -178,7 +178,7 @@ def is_dead_end_up(maze, pos, res=False):
         right_val = _get_maze_at_pos(maze, right_pos)
         if left_val == OPEN or right_val == OPEN:
             return True
-        return is_dead_end_down(maze, [pos[0], pos[1] - 1], res)
+        return is_dead_end_down(maze, [pos[0] - 1, pos[1]], res)
 
 
 def is_dead_end_right(maze, pos, res=False):
@@ -194,7 +194,7 @@ def is_dead_end_right(maze, pos, res=False):
         up_val = _get_maze_at_pos(maze, up_pos)
         if down_val == OPEN or up_val == OPEN:
             return True
-        return is_dead_end_down(maze, [pos[0] + 1, pos[1]], res)
+        return is_dead_end_down(maze, [pos[0], pos[1] + 1], res)
 
 
 def is_dead_end_left(maze, pos, res=False):
@@ -210,7 +210,7 @@ def is_dead_end_left(maze, pos, res=False):
         up_val = _get_maze_at_pos(maze, up_pos)
         if down_val == OPEN or up_val == OPEN:
             return True
-        return is_dead_end_down(maze, [pos[0] - 1, pos[1]], res)
+        return is_dead_end_down(maze, [pos[0], pos[1] - 1], res)
 
 
 def update_maze(current_maze: np.array, full_maze: np.array,
