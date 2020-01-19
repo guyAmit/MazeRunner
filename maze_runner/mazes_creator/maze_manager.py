@@ -1,3 +1,6 @@
+import math
+from math import sqrt
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -131,25 +134,25 @@ def look_down(maze: np.array, full_maze: np.array, pos: [int, int]):
 
 
 def is_surrounded(maze: np.array, pos):
-    up = [pos[0]-1, pos[1]]
-    down = [pos[0]+1, pos[1]]
-    left = [pos[0], pos[1]-1]
-    right = [pos[0], pos[1]+1]
+    up = [pos[0] - 1, pos[1]]
+    down = [pos[0] + 1, pos[1]]
+    left = [pos[0], pos[1] - 1]
+    right = [pos[0], pos[1] + 1]
     try:
         if (_get_maze_at_pos(maze, up) == WALL and
-            _get_maze_at_pos(maze, down) == WALL and
+                _get_maze_at_pos(maze, down) == WALL and
                 _get_maze_at_pos(maze, left) == WALL):
             return (0, 1)
         if (_get_maze_at_pos(maze, up) == WALL and
-            _get_maze_at_pos(maze, down) == WALL and
+                _get_maze_at_pos(maze, down) == WALL and
                 _get_maze_at_pos(maze, right) == WALL):
             return (0, -1)
         if (_get_maze_at_pos(maze, up) == WALL and
-            _get_maze_at_pos(maze, left) == WALL and
+                _get_maze_at_pos(maze, left) == WALL and
                 _get_maze_at_pos(maze, right) == WALL):
             return (1, 0)
         if (_get_maze_at_pos(maze, left) == WALL and
-            _get_maze_at_pos(maze, down) == WALL and
+                _get_maze_at_pos(maze, down) == WALL and
                 _get_maze_at_pos(maze, right) == WALL):
             return (-1, 0)
         return None
@@ -219,6 +222,24 @@ def is_dead_end_left(maze, pos, res=False):
         if down_val == OPEN or up_val == OPEN:
             return True
         return is_dead_end_down(maze, [pos[0], pos[1] - 1], res)
+
+
+def dist_from_end(maze, pos):
+    maze_size = len(maze)
+    dx = maze_size - 1 - pos[1]
+    dy = maze_size - 1 - pos[0]
+    dx = dx ^ 2
+    dy = dy ^ 2
+    res = sqrt(dx + dy)
+    return res
+
+
+def angle_from_end(maze, pos):
+    maze_size = len(maze)
+    dx = abs(maze_size - 1 - pos[1])
+    dy = abs(maze_size - 1 - pos[0])
+    res = math.atan(dy / dx)
+    return res
 
 
 def update_maze(current_maze: np.array, full_maze: np.array,
