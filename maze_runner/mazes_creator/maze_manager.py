@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from mazes_creator.maze_consts import WALL, USER_POS, OPEN, UNSEEN, END
+from .maze_consts import WALL, USER_POS, OPEN, UNSEEN, END
 
 
 # from daedalus import Maze
