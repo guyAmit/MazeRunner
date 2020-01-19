@@ -13,7 +13,7 @@ def _get_maze_at_pos(maze: np.array, pos: (int, int)):
     try:
         res = maze[pos[0]][pos[1]]
         return res
-    except:
+    except ValueError:
         return None
 
 
@@ -40,13 +40,17 @@ def _revel_in_pos(new_maze, old_maze, pos):
     if _get_maze_at_pos(old_maze, pos) == WALL:
         return _revel_in_1_pos(new_maze, old_maze, pos)
     if pos[0] > 0:
-        updated_count += _revel_in_1_pos(new_maze, old_maze, [pos[0] - 1, pos[1]])
+        updated_count += _revel_in_1_pos(new_maze,
+                                         old_maze, [pos[0] - 1, pos[1]])
     if pos[1] > 0:
-        updated_count += _revel_in_1_pos(new_maze, old_maze, [pos[0], pos[1] - 1])
+        updated_count += _revel_in_1_pos(new_maze,
+                                         old_maze, [pos[0], pos[1] - 1])
     if pos[0] < len(new_maze) - 1:
-        updated_count += _revel_in_1_pos(new_maze, old_maze, [pos[0] + 1, pos[1]])
+        updated_count += _revel_in_1_pos(new_maze,
+                                         old_maze, [pos[0] + 1, pos[1]])
     if pos[1] < len(new_maze) - 1:
-        updated_count += _revel_in_1_pos(new_maze, old_maze, [pos[0], pos[1] + 1])
+        updated_count += _revel_in_1_pos(new_maze,
+                                         old_maze, [pos[0], pos[1] + 1])
     return updated_count
 
 
@@ -56,7 +60,7 @@ def look_left(maze: np.array, full_maze: np.array, pos: (int, int)):
     updated_count = 0
     try:
         current_val = _get_maze_at_pos(maze, current_pos)
-    except:
+    except ValueError:
         return 0
     while current_val == UNSEEN or current_val == OPEN:
         if current_pos[0] < 0:
@@ -75,7 +79,7 @@ def look_right(maze: np.array, full_maze: np.array, pos: (int, int)):
     updated_count = 0
     try:
         current_val = _get_maze_at_pos(maze, current_pos)
-    except:
+    except ValueError:
         return 0
     while current_val == UNSEEN or current_val == OPEN:
         if current_pos[0] >= len(maze):
@@ -94,7 +98,7 @@ def look_up(maze: np.array, full_maze: np.array, pos: [int, int]):
     updated_count = 0
     try:
         current_val = _get_maze_at_pos(maze, current_pos)
-    except:
+    except ValueError:
         return 0
     while current_val == UNSEEN or current_val == OPEN:
         if current_pos[1] < 0:
@@ -113,7 +117,7 @@ def look_down(maze: np.array, full_maze: np.array, pos: [int, int]):
     updated_count = 0
     try:
         current_val = _get_maze_at_pos(maze, current_pos)
-    except:
+    except ValueError:
         return 0
     while current_val == UNSEEN or current_val == OPEN:
         if current_pos[1] >= len(maze):
@@ -127,25 +131,29 @@ def look_down(maze: np.array, full_maze: np.array, pos: [int, int]):
 
 
 def is_surrounded(maze: np.array, pos):
-    up = [pos[0]+1, pos[1]]
-    down = [pos[0]-1, pos[1]]
+    up = [pos[0]-1, pos[1]]
+    down = [pos[0]+1, pos[1]]
     left = [pos[0], pos[1]-1]
     right = [pos[0], pos[1]+1]
     try:
-        if _get_maze_at_pos(maze, up) == WALL and _get_maze_at_pos(maze, down) == WALL and _get_maze_at_pos(maze,
-                                                                                                            left) == WALL:
-            return right
-        if _get_maze_at_pos(maze, up) == WALL and _get_maze_at_pos(maze, down) == WALL and _get_maze_at_pos(maze,
-                                                                                                            right) == WALL:
-            return left
-        if _get_maze_at_pos(maze, up) == WALL and _get_maze_at_pos(maze, left) == WALL and _get_maze_at_pos(maze,
-                                                                                                            right) == WALL:
-            return down
-        if _get_maze_at_pos(maze, left) == WALL and _get_maze_at_pos(maze, down) == WALL and _get_maze_at_pos(maze,
-                                                                                                              right) == WALL:
-            return up
+        if (_get_maze_at_pos(maze, up) == WALL and
+            _get_maze_at_pos(maze, down) == WALL and
+                _get_maze_at_pos(maze, left) == WALL):
+            return (0, 1)
+        if (_get_maze_at_pos(maze, up) == WALL and
+            _get_maze_at_pos(maze, down) == WALL and
+                _get_maze_at_pos(maze, right) == WALL):
+            return (0, -1)
+        if (_get_maze_at_pos(maze, up) == WALL and
+            _get_maze_at_pos(maze, left) == WALL and
+                _get_maze_at_pos(maze, right) == WALL):
+            return (1, 0)
+        if (_get_maze_at_pos(maze, left) == WALL and
+            _get_maze_at_pos(maze, down) == WALL and
+                _get_maze_at_pos(maze, right) == WALL):
+            return (-1, 0)
         return None
-    except:
+    except ValueError:
         return None
 
 

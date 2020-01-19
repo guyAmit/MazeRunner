@@ -17,7 +17,7 @@ def run_maze(model, maze):
     prev_pos = curr_pos.copy()
     score = 0
     iligal_move = 0
-    tiles_revield =0
+    tiles_revield = 0
     for i in range(MAX_STEPS):
         pred = model.predict(current_maze, iligal_move)
         iligal_move = 0
@@ -40,14 +40,11 @@ def run_maze(model, maze):
             curr_pos[0] += pred[0]
             curr_pos[1] += pred[1]
 
-            new_tiels= update_maze(current_maze, full_maze, new_pos=curr_pos,
-                        old_pos=prev_pos)
-            tiles_revield+=new_tiels
-            if new_tiels>0:
-                print(f'current pos {curr_pos} revealed {new_tiels}')
-                plt.imshow(-np.array(list(current_maze)))
-                plt.show()
-    return score - tiles_revield
+            new_tiels = update_maze(current_maze, full_maze, new_pos=curr_pos,
+                                    old_pos=prev_pos)
+            if new_tiels > 0:
+                score -= 0.5
+    return score
 
 
 def reward_func(mazes, model):
@@ -66,8 +63,8 @@ if __name__ == '__main__':
 
     weights = model.get_weights()
     es = EvolutionStrategy(weights, reward_func(mazes, model),
-                           population_size=500, sigma=0.7,
-                           learning_rate=0.3, num_threads=1)
+                           population_size=60, sigma=0.6,
+                           learning_rate=0.2, num_threads=1)
 
-    es.run(iterations=30, print_step=1)
+    es.run(iterations=500, print_step=1)
     model.save()
