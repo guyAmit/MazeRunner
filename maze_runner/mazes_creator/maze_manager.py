@@ -287,7 +287,7 @@ if __name__ == '__main__':
     # m = np.load('mazes.npy')
     pass
     for i in range(100):
-        known, full = make_maze((30, 30), i)
+        known, full = make_maze((15, 15), i)
         # np.save
         # np.save(f'{i}_{known}.npy',)
         mazes.append((known, full))
