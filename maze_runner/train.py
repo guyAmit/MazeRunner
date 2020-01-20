@@ -77,7 +77,7 @@ if __name__ == '__main__':
     # model.load()
     weights = model.get_weights()
     es = EvolutionStrategy(weights, reward_func(mazes, model),
-                           population_size=150, sigma=0.22,
+                           population_size=50, sigma=0.22,
                            learning_rate=0.1, num_threads=1)
 
     es.run(iterations=100, print_step=1)

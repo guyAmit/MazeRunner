@@ -9,14 +9,14 @@ from .maze_consts import WALL, USER_POS, OPEN, UNSEEN, END, VISITED_POS
 
 # from daedalus import Maze
 # from daedalus._maze import init_random
-# from maze_consts import
+# from maze_consts import WALL, USER_POS, OPEN, UNSEEN, END, VISITED_POS
 
 
 def _get_maze_at_pos(maze: np.array, pos: (int, int)):
     try:
         res = maze[pos[0]][pos[1]]
         return res
-    except ValueError:
+    except IndexError:
         return None
 
 
@@ -344,7 +344,7 @@ if __name__ == '__main__':
     # m = np.load('mazes.npy')
     pass
     for i in range(100):
-        known, full = make_maze((15, 15), i)
+        known, full = make_maze((10, 10), i)
         # np.save
         # np.save(f'{i}_{known}.npy',)
         mazes.append((known, full))
