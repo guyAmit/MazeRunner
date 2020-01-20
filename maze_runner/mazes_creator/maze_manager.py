@@ -306,8 +306,10 @@ def get_right(pos):
 
 
 def get_lsm_features(maze, pos):
-    directions_vals = [_get_maze_at_pos(maze, get_up(pos)), _get_maze_at_pos(maze, get_down(pos)),
-                       _get_maze_at_pos(maze, get_left(pos)), _get_maze_at_pos(maze, get_right(pos))]
+    directions_vals = [_get_maze_at_pos(maze, get_up(pos)),
+                       _get_maze_at_pos(maze, get_down(pos)),
+                       _get_maze_at_pos(maze, get_left(pos)),
+                       _get_maze_at_pos(maze, get_right(pos))]
     res = []
     for p in directions_vals:
         if p == OPEN:
@@ -318,6 +320,7 @@ def get_lsm_features(maze, pos):
     angle = angle_from_end(maze, pos)
     res.append(dist)
     res.append(angle)
+    res = np.array(res)
     return res
 
 
