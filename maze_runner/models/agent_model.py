@@ -7,22 +7,28 @@ from consts import MAX_STEPS
 
 
 def build_cnn_model(img_size):
-    img = Input(shape=(img_size, img_size, 1))
-    iligal_move = Input(shape=(1,))
-    dead_end = Input(shape=(1,))
+    img = Input(shape=(img_size, img_size, 1), name='img')
+    lstm_features = Input(shape=(4,), name='lstm')
+    iligal_move = Input(shape=(1,), name='iligal_move')
+    dead_end = Input(shape=(1,), name='dead_end')
+
+    inputs = {'img': img,
+              'lstm': lstm_features,
+              'iligal_move': iligal_move,
+              'dead_end': dead_end}
+
     y = Conv2D(filters=10, kernel_size=5, strides=1, padding='same')(img)
     y = MaxPool2D(pool_size=(2, 2), strides=(2, 2), padding='same')(y)
     y = Flatten()(y)
-    x = Concatenate()([y, iligal_move, dead_end])
+    x = Concatenate()([y, lstm_features, iligal_move, dead_end])
     x = Dense(units=10, activation='relu')(x)
     x = Dense(units=4, activation='softmax')(x)
-    model = Model(inputs=[img, iligal_move, dead_end], outputs=x)
+    model = Model(inputs=inputs, outputs=x)
 
     return model
 
 
 def build_lstm_model(time_stamps, feature_number):
-    print('Building LSTM Model')
     lstm_input = Input(shape=(time_stamps, feature_number))
     x = LSTM(units=3)(lstm_input)
     x = Dense(units=4, activation='softmax')(x)
@@ -55,7 +61,12 @@ class Agent_Model():
                 iligal_move=None, dead_end=None):
         if self.net_type == 'cnn':
             img = img / 255
-            pred = self.model.predict([img, iligal_move, dead_end])
+            inputs = {'img': img,
+                      'lstm': lstm_featuers.reshape(1, 4),
+                      'iligal_move': iligal_move,
+                      'dead_end': dead_end}
+
+            pred = self.model.predict(inputs)
         else:
             pred = self.model.predict(lstm_featuers)
         idx = np.argmax(pred, axis=1)

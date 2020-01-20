@@ -23,7 +23,7 @@ def _get_maze_at_pos(maze: np.array, pos: (int, int)):
 def _set_maze_at_post(maze: np.array, pos: (int, int), val: int):
     if pos[1] >= len(maze) or pos[0] >= len(maze):
         return maze
-    if _get_maze_at_pos(maze,pos) == VISITED_POS:
+    if _get_maze_at_pos(maze, pos) == VISITED_POS:
         return maze
     maze[pos[0]][pos[1]] = val
     return maze
@@ -286,7 +286,7 @@ def make_maze(size, seed):
 
 
 def make_maze_from_file(index):
-    m = np.load('mazes_creator//mazes.npy')
+    m = np.load('mazes_creator//mazes _15.npy')
     known, full = m[index]
     return known, full
 

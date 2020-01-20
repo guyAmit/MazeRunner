@@ -1,3 +1,4 @@
+from tensorflow.keras import Model
 from evostra import EvolutionStrategy
 from models.agent_model import Agent_Model
 from mazes_creator.maze_manager import (
@@ -20,24 +21,28 @@ def run_maze(model, maze):
     dead_end = 0
     features = np.zeros((1, MAX_STEPS, 6))
     for i in range(MAX_STEPS):
+        directions_features = get_lsm_features(current_maze, curr_pos)
         if model.net_type == 'cnn':
             dead_end = 1 if is_surrounded(
                 current_maze, curr_pos) is not None else 0
-            pred = model.predict(img=current_maze.reshape(
-                (1, MAZE_SIZE[0], MAZE_SIZE[1], 1)),
+
+            pred = model.predict(
+                lstm_featuers=directions_features[:4],
+                img=current_maze.reshape(
+                    (1, MAZE_SIZE[0], MAZE_SIZE[1], 1)),
                 iligal_move=np.array([iligal_move]),
                 dead_end=np.array([dead_end]))
 
         if model.net_type == 'lstm':
-            features[:, i] = get_lsm_features(current_maze, curr_pos)
+            features[:, i] = directions_features
             if i != 0:
                 features[:, i-1, pred] = -1
-            pred = model.predict(features)
+            pred = model.predict(lstm_features=features)
         iligal_move = 0
         if (curr_pos[0] + pred[0] >= current_maze.shape[0] or
             curr_pos[1] + pred[1] >= current_maze.shape[1] or
                 curr_pos[0] + pred[0] < 0 or curr_pos[1] + pred[1] < 0):
-            score += 5.5  # out of maze
+            score += 2.5  # out of maze
             iligal_move = 1
         elif current_maze[curr_pos[0] + pred[0], curr_pos[1]+pred[1]] == END:
             score -= 40  # maze ending bonus
@@ -46,15 +51,16 @@ def run_maze(model, maze):
             # plt.show()
             return score
         elif current_maze[curr_pos[0] + pred[0], curr_pos[1]+pred[1]] == WALL:
-            score += 5  # run into wall
+            score += 2  # run into wall
             iligal_move = 1
-        elif current_maze[curr_pos[0] + pred[0], curr_pos[1]+pred[1]] == VISITED_POS:
+        elif current_maze[curr_pos[0] + pred[0],
+                          curr_pos[1]+pred[1]] == VISITED_POS:
             score += 1
             prev_pos = curr_pos.copy()
             curr_pos[0] += pred[0]
             curr_pos[1] += pred[1]
         else:
-            score += 0.1
+            score -= 0.5
             prev_pos = curr_pos.copy()
             curr_pos[0] += pred[0]
             curr_pos[1] += pred[1]
@@ -62,7 +68,7 @@ def run_maze(model, maze):
         new_tiels = update_maze(current_maze, full_maze, new_pos=curr_pos,
                                 old_pos=prev_pos)
         if new_tiels > 0:
-            score -= 0.5
+            score -= 1
         # plt.matshow(current_maze)
         # plt.show()
     del maze
@@ -86,8 +92,8 @@ if __name__ == '__main__':
     # model.load()
     weights = model.get_weights()
     es = EvolutionStrategy(weights, reward_func(mazes, model),
-                           population_size=50, sigma=0.1,
-                           learning_rate=0.01, num_threads=1)
+                           population_size=60, sigma=0.15,
+                           learning_rate=0.05, num_threads=1)
 
     es.run(iterations=100, print_step=1)
     model.save()
