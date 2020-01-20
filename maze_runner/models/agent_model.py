@@ -8,14 +8,14 @@ from tensorflow.keras import Model
 def build_model(img_size):
     img = Input(shape=(img_size, img_size, 1))
     iligal_move = Input(shape=(1,))
-    # hint_move = Input(shape=(1,))
+    dead_end = Input(shape=(1,))
     y = Conv2D(filters=10, kernel_size=5, strides=1, padding='same')(img)
     y = MaxPool2D(pool_size=(2, 2), strides=(2, 2), padding='same')(y)
     y = Flatten()(y)
-    x = Concatenate()([y, iligal_move])
+    x = Concatenate()([y, iligal_move, dead_end])
     x = Dense(units=10, activation='relu')(x)
     x = Dense(units=4, activation='softmax')(x)
-    model = Model(inputs=[img, iligal_move], outputs=x)
+    model = Model(inputs=[img, iligal_move, dead_end], outputs=x)
 
     return model
 
@@ -38,9 +38,9 @@ class Agent_Model():
         self.img_size = img_size
         self.model = build_model(img_size=img_size)
 
-    def predict(self, img, iligal_move):
+    def predict(self, img, iligal_move, dead_end):
         img = img / 255
-        pred = self.model.predict([img, iligal_move])
+        pred = self.model.predict([img, iligal_move, dead_end])
         idx = np.argmax(pred, axis=1)
         return convert_to_directions(idx)
 

@@ -4,7 +4,7 @@ from math import sqrt
 import matplotlib.pyplot as plt
 import numpy as np
 
-from .maze_consts import WALL, USER_POS, OPEN, UNSEEN, END
+from .maze_consts import WALL, USER_POS, OPEN, UNSEEN, END, VISITED_POS
 
 
 # from daedalus import Maze
@@ -254,6 +254,7 @@ def update_maze(current_maze: np.array, full_maze: np.array,
     updated_count += look_left(current_maze, full_maze, new_pos)
     updated_count += look_up(current_maze, full_maze, new_pos)
     current_maze[new_pos[0]][new_pos[1]] = USER_POS
+    current_maze[old_pos[0]][old_pos[1]] = VISITED_POS
     return updated_count
 
 
