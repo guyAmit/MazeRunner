@@ -37,7 +37,7 @@ def run_maze(model, maze):
                 curr_pos[0] + pred[0] < 0 or curr_pos[1] + pred[1] < 0):
             score += 2.5  # out of maze
             iligal_move = 1
-        if current_maze[curr_pos[0] + pred[0], curr_pos[1]+pred[1]] == END:
+        elif current_maze[curr_pos[0] + pred[0], curr_pos[1]+pred[1]] == END:
             score -= 20  # maze ending bonus
             print('finished maze !!')
             return score
