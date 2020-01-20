@@ -23,9 +23,11 @@ def run_maze(model, maze):
         if model.net_type == 'cnn':
             dead_end = 1 if is_surrounded(
                 current_maze, curr_pos) is not None else 0
-            pred = model.predict(current_maze.reshape(
-                1, MAZE_SIZE[0], MAZE_SIZE[1], 1),
-                np.array([iligal_move]), np.array([dead_end]))
+            pred = model.predict(img=current_maze.reshape(
+                (1, MAZE_SIZE[0], MAZE_SIZE[1], 1)),
+                iligal_move=np.array([iligal_move]),
+                dead_end=np.array([dead_end]))
+
         if model.net_type == 'lstm':
             features[:, i] = get_lsm_features(current_maze, curr_pos)
             if i != 0:
@@ -45,7 +47,7 @@ def run_maze(model, maze):
             score += 2  # run into wall
             iligal_move = 1
         else:
-            score += 0.1
+            score -= 0.1
             prev_pos = curr_pos.copy()
             curr_pos[0] += pred[0]
             curr_pos[1] += pred[1]
@@ -73,7 +75,7 @@ def reward_func(mazes, model):
 
 if __name__ == '__main__':
     mazes = [make_maze_from_file(i) for i in range(TRAINSET_SIZE)]
-    model = Agent_Model(net_type='lstm', img_size=MAZE_SIZE[0])
+    model = Agent_Model(net_type='cnn', img_size=MAZE_SIZE[0])
     # model.load()
     weights = model.get_weights()
     es = EvolutionStrategy(weights, reward_func(mazes, model),

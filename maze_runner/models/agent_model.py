@@ -51,7 +51,7 @@ class Agent_Model():
                       else build_lstm_model(time_stamps=MAX_STEPS,
                                             feature_number=6))
 
-    def predict(self, lstm_featuers, img=None,
+    def predict(self, lstm_featuers=None, img=None,
                 iligal_move=None, dead_end=None):
         if self.net_type == 'cnn':
             img = img / 255
