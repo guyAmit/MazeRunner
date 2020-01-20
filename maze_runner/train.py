@@ -37,17 +37,17 @@ def run_maze(model, maze):
         if (curr_pos[0] + pred[0] >= current_maze.shape[0] or
             curr_pos[1] + pred[1] >= current_maze.shape[1] or
                 curr_pos[0] + pred[0] < 0 or curr_pos[1] + pred[1] < 0):
-            score += 2.5  # out of maze
+            score += 5.5  # out of maze
             iligal_move = 1
         elif current_maze[curr_pos[0] + pred[0], curr_pos[1]+pred[1]] == END:
-            score -= 20  # maze ending bonus
+            score -= 40  # maze ending bonus
             print('finished maze !!')
             return score
         elif current_maze[curr_pos[0] + pred[0], curr_pos[1]+pred[1]] == WALL:
-            score += 2  # run into wall
+            score += 5  # run into wall
             iligal_move = 1
         else:
-            score -= 0.1
+            score += 0.1
             prev_pos = curr_pos.copy()
             curr_pos[0] += pred[0]
             curr_pos[1] += pred[1]
@@ -69,7 +69,7 @@ def reward_func(mazes, model):
         for maze in mazes:
             reward += run_maze(model, [maze[0].copy(), maze[1]])
         print(reward)
-        return -1*(reward / len(mazes))
+        return -1*(reward)
     return get_reward
 
 
