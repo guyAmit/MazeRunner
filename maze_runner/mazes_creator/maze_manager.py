@@ -289,6 +289,38 @@ def make_maze_from_file(index):
     return known, full
 
 
+def get_up(pos):
+    return [pos[0] + 1, pos[1]]
+
+
+def get_down(pos):
+    return [pos[0] - 1, pos[1]]
+
+
+def get_left(pos):
+    return [pos[0], pos[1] - 1]
+
+
+def get_right(pos):
+    return [pos[0], pos[1] + 1]
+
+
+def get_lsm_features(maze, pos):
+    directions_vals = [_get_maze_at_pos(maze, get_up(pos)), _get_maze_at_pos(maze, get_down(pos)),
+                       _get_maze_at_pos(maze, get_left(pos)), _get_maze_at_pos(maze, get_right(pos))]
+    res = []
+    for p in directions_vals:
+        if p == OPEN:
+            res.append(1)
+        else:
+            res.append(0)
+    dist = dist_from_end(maze, pos)
+    angle = angle_from_end(maze, pos)
+    res.append(dist)
+    res.append(angle)
+    return res
+
+
 def show_maze(maze):
     print('Maze entrance: {}'.format(maze.entrance))
     print('Maze exit: {}'.format(maze.exit))
