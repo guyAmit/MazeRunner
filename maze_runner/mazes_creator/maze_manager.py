@@ -23,6 +23,8 @@ def _get_maze_at_pos(maze: np.array, pos: (int, int)):
 def _set_maze_at_post(maze: np.array, pos: (int, int), val: int):
     if pos[1] >= len(maze) or pos[0] >= len(maze):
         return maze
+    if _get_maze_at_pos(maze,pos) == VISITED_POS:
+        return maze
     maze[pos[0]][pos[1]] = val
     return maze
 

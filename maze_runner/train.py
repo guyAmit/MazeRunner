@@ -4,7 +4,7 @@ from mazes_creator.maze_manager import (
     make_maze_from_file, show_maze, update_maze, is_surrounded,
     get_lsm_features)
 from mazes_creator.maze_consts import (
-    STRARTING_POSINGTION, WALL, MAZE_ENDING, USER_POS, END)
+    STRARTING_POSINGTION, WALL, MAZE_ENDING, USER_POS, END, VISITED_POS)
 from consts import TESTSET_SIZE, TRAINSET_SIZE, MAZE_SIZE, MAX_STEPS
 import numpy as np
 import matplotlib.pyplot as plt
@@ -42,10 +42,17 @@ def run_maze(model, maze):
         elif current_maze[curr_pos[0] + pred[0], curr_pos[1]+pred[1]] == END:
             score -= 40  # maze ending bonus
             print('finished maze !!')
+            # plt.matshow(-np.array(list(current_maze)))
+            # plt.show()
             return score
         elif current_maze[curr_pos[0] + pred[0], curr_pos[1]+pred[1]] == WALL:
             score += 5  # run into wall
             iligal_move = 1
+        elif current_maze[curr_pos[0] + pred[0], curr_pos[1]+pred[1]] == VISITED_POS:
+            score += 1
+            prev_pos = curr_pos.copy()
+            curr_pos[0] += pred[0]
+            curr_pos[1] += pred[1]
         else:
             score += 0.1
             prev_pos = curr_pos.copy()
@@ -79,8 +86,8 @@ if __name__ == '__main__':
     # model.load()
     weights = model.get_weights()
     es = EvolutionStrategy(weights, reward_func(mazes, model),
-                           population_size=50, sigma=0.22,
-                           learning_rate=0.1, num_threads=1)
+                           population_size=50, sigma=0.1,
+                           learning_rate=0.01, num_threads=1)
 
     es.run(iterations=100, print_step=1)
     model.save()
