@@ -277,7 +277,10 @@ def make_maze(size, seed):
     # m = Maze.create_perfect(maze, nEntrancePos=0, nRndBias=2)
     full_maze = np.array(list(real_maze))
     full_maze[0, 0] = OPEN
-    full_maze[real_maze.exit[0], real_maze.exit[1]] = END
+    size = size[0]
+    full_maze[size-1, size-1] = END
+    full_maze[size - 2, size - 1] = OPEN
+    full_maze[size - 1, size - 2] = OPEN
     update_maze(known_maze, full_maze,
                 [0, 0],
                 [0, 0])
@@ -346,7 +349,7 @@ if __name__ == '__main__':
     # m = np.load('mazes.npy')
     pass
     for i in range(100):
-        known, full = make_maze((10, 10), i)
+        known, full = make_maze((15, 15), i)
         # np.save
         # np.save(f'{i}_{known}.npy',)
         mazes.append((known, full))
