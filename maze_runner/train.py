@@ -58,7 +58,7 @@ def run_maze(model, maze, j):
         if (curr_pos[0] + pred[0] >= current_maze.shape[0] or
             curr_pos[1] + pred[1] >= current_maze.shape[1] or
                 curr_pos[0] + pred[0] < 0 or curr_pos[1] + pred[1] < 0):
-            score += 2.5  # out of maze
+            score += 5.5  # out of maze
             iligal_move = 1
             # return score
         elif current_maze[curr_pos[0] + pred[0], curr_pos[1]+pred[1]] == END:
@@ -70,7 +70,7 @@ def run_maze(model, maze, j):
                 return score+i*3
             return score+i*10
         elif current_maze[curr_pos[0] + pred[0], curr_pos[1]+pred[1]] == WALL:
-            score += 2  # run into wall
+            score += 5  # run into wall
             iligal_move = 1
             # return score
         elif current_maze[curr_pos[0] + pred[0],
