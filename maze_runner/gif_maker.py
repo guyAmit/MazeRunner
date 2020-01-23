@@ -22,7 +22,7 @@ def make_gif(mazes, maze_number):
     names = []
 
     for i in range(len(mazes)):
-        imname = f'{output_dir}\\{i}.jpg'
+        imname = os.path.join(output_dir, f'{i}.jpg')
         m = np.kron(mazes[i], np.ones((100, 100), dtype=np.int8))
         plt.imsave(imname, m)
         names.append(imname)
