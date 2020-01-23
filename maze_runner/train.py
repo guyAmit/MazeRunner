@@ -1,31 +1,31 @@
 import datetime
-from moviepy.editor import ImageSequenceClip
-import imageio as imageio
+
+import matplotlib.pyplot as plt
+import numpy as np
 from evostra import EvolutionStrategy
 
+from consts import MAX_STEPS, MAZE_SIZE, TESTSET_SIZE, TRAINSET_SIZE
 from gif_maker import make_gif
+from mazes_creator.maze_consts import (END, MAZE_ENDING, STRARTING_POSINGTION,
+                                       USER_POS, VISITED_POS, WALL)
+from mazes_creator.maze_manager import (get_lsm_features, is_surrounded,
+                                        make_maze_from_file, show_maze,
+                                        update_maze)
 from models.agent_model import Agent_Model
-from mazes_creator.maze_manager import (
-    make_maze_from_file, show_maze, update_maze, is_surrounded,
-    get_lsm_features)
-from mazes_creator.maze_consts import (
-    STRARTING_POSINGTION, WALL, MAZE_ENDING, USER_POS, END, VISITED_POS)
-from consts import TESTSET_SIZE, TRAINSET_SIZE, MAZE_SIZE, MAX_STEPS
-import numpy as np
-import array2gif
-import matplotlib.pyplot as plt
-from matplotlib.animation import TimedAnimation
 
 global SOLVED
-SOLVED=set()
+SOLVED = set()
+
+
 def convert_array(current_maze):
-    l=list(current_maze)
+    l = list(current_maze)
     np_array = -np.array(l)
 
     # res = np_array.astype(np.int8)
     return np_array
 
-def run_maze(model, maze, j ):
+
+def run_maze(model, maze, j):
     global SOLVED
     current_maze = maze[0]
     full_maze = maze[1]
@@ -61,22 +61,22 @@ def run_maze(model, maze, j ):
             score -= 1000  # maze ending bonus
             print('finished maze !!')
             if j not in SOLVED:
-                make_gif(mazes)
+                make_gif(mazes, j)
                 SOLVED.add(j)
-            # plt.matshow(-np.array(list(current_maze)))
-            # plt.show()
-            return score+i*6
+                return score+i*3
+            return score+i*10
         elif current_maze[curr_pos[0] + pred[0], curr_pos[1]+pred[1]] == WALL:
             score += 5  # run into wall
             iligal_move = 1
             # return score
-        elif current_maze[curr_pos[0] + pred[0], curr_pos[1]+pred[1]] == VISITED_POS:
+        elif current_maze[curr_pos[0] + pred[0],
+                          curr_pos[1]+pred[1]] == VISITED_POS:
             score -= 2
             prev_pos = curr_pos.copy()
             curr_pos[0] += pred[0]
             curr_pos[1] += pred[1]
         else:
-            score -=5
+            score -= 5
             prev_pos = curr_pos.copy()
             curr_pos[0] += pred[0]
             curr_pos[1] += pred[1]
@@ -86,25 +86,20 @@ def run_maze(model, maze, j ):
         converted_maze = convert_array(current_maze)
         mazes.append(converted_maze)
         if new_tiels > 0:
-            score -=10
+            score -= 15
 
     del maze
     return score
 
 
-def save_gif(mazes):
-    mazes= np.array(mazes)
-    kwargs_write = {'fps': 5.0}
-    output_file = 'Gif-%s.gif' % datetime.datetime.now().strftime('%Y-%M-%d-%H-%M-%S')
-    return mazes
 def reward_func(mazes, model):
     def get_reward(weights):
         model.set_weights(weights)
         reward = 0
-        counter =0
+        counter = 0
         for maze in mazes:
             reward += run_maze(model, [maze[0].copy(), maze[1]], counter)
-            counter+=1
+            counter += 1
         print(reward)
         return -(reward)
     return get_reward
