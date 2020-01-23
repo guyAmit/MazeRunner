@@ -15,6 +15,8 @@ from models.agent_model import Agent_Model
 
 global SOLVED
 SOLVED = set()
+mazes = [make_maze_from_file(i) for i in range(TRAINSET_SIZE)]
+model = Agent_Model(net_type='cnn', img_size=MAZE_SIZE[0])
 
 
 def convert_array(current_maze):
@@ -58,29 +60,28 @@ def run_maze(model, maze, j):
         if (curr_pos[0] + pred[0] >= current_maze.shape[0] or
             curr_pos[1] + pred[1] >= current_maze.shape[1] or
                 curr_pos[0] + pred[0] < 0 or curr_pos[1] + pred[1] < 0):
-            score += 5.5  # out of maze
+            score += 10  # out of maze
             iligal_move = 1
             # return score
         elif current_maze[curr_pos[0] + pred[0], curr_pos[1]+pred[1]] == END:
-            score -= 1000  # maze ending bonus
-            print('finished maze !!')
-            if j not in SOLVED:
-                make_gif(mazes, j)
-                SOLVED.add(j)
-                return score+i*3
-            return score+i*10
+            score = 350  # maze ending bonus
+            # print('finished maze !!')
+            # if j not in SOLVED:
+            # make_gif(mazes, j)
+            # SOLVED.add(j)
+            return score-i*10, 1
         elif current_maze[curr_pos[0] + pred[0], curr_pos[1]+pred[1]] == WALL:
-            score += 5  # run into wall
+            score += 10  # run into wall
             iligal_move = 1
             # return score
         elif current_maze[curr_pos[0] + pred[0],
                           curr_pos[1]+pred[1]] == VISITED_POS:
-            score -= 2
+            score -= 0.5
             prev_pos = curr_pos.copy()
             curr_pos[0] += pred[0]
             curr_pos[1] += pred[1]
         else:
-            score -= 5
+            score -= 1
             prev_pos = curr_pos.copy()
             curr_pos[0] += pred[0]
             curr_pos[1] += pred[1]
@@ -90,33 +91,34 @@ def run_maze(model, maze, j):
         converted_maze = convert_array(current_maze)
         mazes.append(converted_maze)
         if new_tiels > 0:
-            score -= 15
-
+            score -= 5
+        # plt.matshow(current_maze)
+        # plt.show()
     del maze
-    return score
+    return score, 0
 
 
-def reward_func(mazes, model):
-    def get_reward(weights):
-        model.set_weights(weights)
-        reward = 0
-        counter = 0
-        for maze in mazes:
-            reward += run_maze(model, [maze[0].copy(), maze[1]], counter)
-            counter += 1
-        print(reward)
-        return -(reward)
-    return get_reward
+def get_reward(weights):
+    global model
+    global mazes
+    model.set_weights(weights)
+    reward = 0
+    solved = []
+    for i, maze in enumerate(mazes):
+        r, s = run_maze(model, [maze[0].copy(), maze[1]], i)
+        reward += r
+        if s == 1:
+            solved.append(i)
+    print(f'Reward: {-reward/len(mazes)} Solved: {solved}')
+    return -(reward/len(mazes))
 
 
 if __name__ == '__main__':
-    mazes = [make_maze_from_file(i) for i in range(TRAINSET_SIZE)]
-    model = Agent_Model(net_type='cnn', img_size=MAZE_SIZE[0])
     # model.load()
     weights = model.get_weights()
-    es = EvolutionStrategy(weights, reward_func(mazes, model),
-                           population_size=60, sigma=0.15,
-                           learning_rate=0.05, num_threads=1)
+    es = EvolutionStrategy(weights, get_reward,
+                           population_size=60, sigma=0.20,
+                           learning_rate=0.1, num_threads=8)
 
-    es.run(iterations=1000, print_step=1)
+    es.run(iterations=200, print_step=1)
     model.save()
