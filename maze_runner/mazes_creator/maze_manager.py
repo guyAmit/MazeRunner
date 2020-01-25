@@ -240,16 +240,25 @@ def angle_from_end(maze, pos):
     maze_size = len(maze)
     dx = abs(maze_size - 1 - pos[1])
     dy = abs(maze_size - 1 - pos[0])
-    res = math.atan(dy / dx)
+    res = math.atan(dy / (dx+1e-10))
     return res
+
+
+def end_near_indicitor(maze, pos):
+    features = np.zeros((4,))
+    for i, d in enumerate([(1, 0), (-1, 0), (0, 1), (0, -1)]):
+        if pos[0]+d[0] < maze.shape[0] and pos[1]+d[1] < maze.shape[1]:
+            end = 0 if maze[pos[0]+d[0], pos[1]+d[1]] == END else 0
+            features[i] = end
+        else:
+            features[i] = 0
+    return features
 
 
 def update_maze(current_maze: np.array, full_maze: np.array,
                 new_pos: [int, int], old_pos: [int, int]):
     updated_count = 0
-    # current_maze = _set_maze_at_post(current_maze, old_pos, _get_maze_at_pos(full_maze, old_pos))
     updated_count += _revel_in_pos(current_maze, full_maze, old_pos)
-    # current_maze[old_pos[0]][old_pos[1]]=_get_maze_at_pos(full_maze,old_pos)
     current_maze = _set_maze_at_post(current_maze, new_pos, USER_POS)
     updated_count += look_down(current_maze, full_maze, new_pos)
     updated_count += look_right(current_maze, full_maze, new_pos)
@@ -258,14 +267,6 @@ def update_maze(current_maze: np.array, full_maze: np.array,
     current_maze[new_pos[0]][new_pos[1]] = USER_POS
     current_maze[old_pos[0]][old_pos[1]] = VISITED_POS
     return updated_count
-
-
-"""
-1 wall
-0 open
--1 unseen
-999 user
-"""
 
 
 def make_maze(size, seed):
@@ -289,17 +290,17 @@ def make_maze(size, seed):
 
 
 def make_maze_from_file(index):
-    m = np.load('mazes_creator//mazes _15.npy')
+    m = np.load('mazes_creator//mazes.npy')
     known, full = m[index]
     return known, full
 
 
 def get_up(pos):
-    return [pos[0] + 1, pos[1]]
+    return [pos[0] - 1, pos[1]]
 
 
 def get_down(pos):
-    return [pos[0] - 1, pos[1]]
+    return [pos[0] + 1, pos[1]]
 
 
 def get_left(pos):
@@ -336,12 +337,6 @@ def show_maze(maze):
     plt.imshow(-a)
     plt.show()
     pass
-
-
-# def main():
-#     SIZE = 31
-#     m = make_maze((SIZE, SIZE), 1)
-#     show_maze(m)
 
 
 if __name__ == '__main__':

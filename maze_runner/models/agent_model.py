@@ -17,11 +17,11 @@ def build_cnn_model(img_size):
               'iligal_move': iligal_move,
               'dead_end': dead_end}
 
-    y = Conv2D(filters=10, kernel_size=5, strides=1, padding='same')(img)
+    y = Conv2D(filters=24, kernel_size=5, strides=1, padding='same')(img)
     y = MaxPool2D(pool_size=(2, 2), strides=(2, 2), padding='same')(y)
     y = Flatten()(y)
     x = Concatenate()([y, lstm_features, iligal_move, dead_end])
-    x = Dense(units=10, activation='relu')(x)
+    x = Dense(units=10, activation='tanh')(x)
     x = Dense(units=4, activation='softmax')(x)
     model = Model(inputs=inputs, outputs=x)
 
@@ -33,6 +33,17 @@ def build_lstm_model(time_stamps, feature_number):
     x = LSTM(units=3)(lstm_input)
     x = Dense(units=4, activation='softmax')(x)
     model = Model(inputs=lstm_input, outputs=x)
+    return model
+
+
+def build_dense_model(feature_number):
+    # directions0-3, end_near_indicator4-7,
+    # direction, distance, visited, dead_end, iligal_move,
+    inputs = Input(shape=(feature_number,))
+    x = Dense(units=20, activation='tanh')(inputs)
+    x = Dense(units=10, activation='tanh')(x)
+    x = Dense(units=4, activation='softmax')(x)
+    model = Model(inputs=inputs, outputs=x)
     return model
 
 
@@ -53,11 +64,16 @@ class Agent_Model():
     def __init__(self, net_type, img_size):
         self.img_size = img_size
         self.net_type = net_type
-        self.model = (build_cnn_model(img_size=img_size) if net_type == 'cnn'
-                      else build_lstm_model(time_stamps=MAX_STEPS,
-                                            feature_number=6))
+        if net_type == 'cnn':
+            self.model = build_cnn_model(img_size=img_size)
+        elif net_type == 'lstm':
+            self.model = build_lstm_model(time_stamps=MAX_STEPS,
+                                          feature_number=6)
+        else:
+            self.model = build_dense_model(feature_number=13)
 
-    def predict(self, lstm_featuers=None, img=None,
+    def predict(self, lstm_featuers=None, visited=None,
+                end_near_indicator=None, img=None,
                 iligal_move=None, dead_end=None):
         if self.net_type == 'cnn':
             img = img / 255
@@ -67,8 +83,14 @@ class Agent_Model():
                       'dead_end': dead_end}
 
             pred = self.model.predict(inputs)
-        else:
+        elif self.net_type == 'lstm':
             pred = self.model.predict(lstm_featuers)
+        else:
+            featuers = np.concatenate((lstm_featuers,
+                                       end_near_indicator,
+                                       [visited, dead_end,
+                                        iligal_move])).reshape(1, -1)
+            pred = self.model.predict(featuers)
         idx = np.argmax(pred, axis=1)
         return convert_to_directions(idx)
 
@@ -98,7 +120,7 @@ class Agent_Model():
             if len(layer_weights) != 0:
                 w = []
                 if layer.name[:6] == 'conv2d':
-                    fillters = weights[counter].reshape((5, 5, 1, 10))
+                    fillters = weights[counter].reshape((5, 5, 1, 24))
                     w.append(fillters)
                     w.append(weights[counter+1].reshape(-1))
                     counter += 2
