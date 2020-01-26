@@ -13,11 +13,48 @@ from mazes_creator.maze_manager import (get_lsm_features, is_surrounded,
                                         update_maze, end_near_indicitor)
 from models.agent_model import Agent_Model
 
-global SOLVED
-SOLVED = set()
 mazes = [make_maze_from_file(i) for i in range(TRAINSET_SIZE)]
 model = Agent_Model(net_type='dense', img_size=MAZE_SIZE[0])
 mazes_weights = [1]*TRAINSET_SIZE
+mazes_weights[0] = 2
+mazes_weights[6] = 2
+mazes_weights[7] = 2
+mazes_weights[11] = 2
+mazes_weights[12] = 2
+mazes_weights[17] = 2
+mazes_weights[21] = 2
+
+
+def neural_network_predict(
+        model,
+        directions_features,
+        lstm_featuers,
+        current_maze,
+        visited,
+        iligal_move,
+        dead_end,
+        end_near):
+    if model.net_type == 'cnn':
+        pred = model.predict(
+            lstm_featuers=directions_features[:4],
+            img=current_maze.reshape(
+                (1, MAZE_SIZE[0], MAZE_SIZE[1], 1)),
+            iligal_move=np.array([iligal_move]),
+            dead_end=np.array([dead_end]))
+
+    elif model.net_type == 'lstm':
+        lstm_featuers[:, i] = directions_features
+        if i != 0:
+            lstm_featuers[:, i-1, pred] = -1
+        pred = model.predict(lstm_features=lstm_featuers)
+    else:
+        #  dense
+        pred = model.predict(lstm_featuers=directions_features,
+                             visited=visited,
+                             dead_end=dead_end,
+                             iligal_move=1 if iligal_move > 0 else 0,
+                             end_near_indicator=end_near)
+    return pred
 
 
 def run_maze(model, maze, debug):
@@ -28,8 +65,9 @@ def run_maze(model, maze, debug):
     score = 0
     iligal_move = 0
     dead_end = 0
-    features = np.zeros((1, MAX_STEPS, 6))
+    lstm_features = np.zeros((1, MAX_STEPS, 6))
     for i in range(MAX_STEPS):
+        #  extract maze features:
         directions_features = get_lsm_features(
             current_maze, curr_pos).reshape(-1)
         dead_end = 1 if is_surrounded(
@@ -40,40 +78,25 @@ def run_maze(model, maze, debug):
                                                  curr_pos[1]]
                    >= VISITED_POS else 0)
         end_near = end_near_indicitor(current_maze, curr_pos)
-
-        if model.net_type == 'cnn':
-            pred = model.predict(
-                lstm_featuers=directions_features[:4],
-                img=current_maze.reshape(
-                    (1, MAZE_SIZE[0], MAZE_SIZE[1], 1)),
-                iligal_move=np.array([iligal_move]),
-                dead_end=np.array([dead_end]))
-
-        elif model.net_type == 'lstm':
-            features[:, i] = directions_features
-            if i != 0:
-                features[:, i-1, pred] = -1
-            pred = model.predict(lstm_features=features)
-        else:
-            #  dense
-            pred = model.predict(lstm_featuers=directions_features,
-                                 visited=visited,
-                                 dead_end=dead_end,
-                                 iligal_move=iligal_move,
-                                 end_near_indicator=end_near)
+        pred = neural_network_predict(model, directions_features,
+                                      lstm_features,
+                                      current_maze, visited, iligal_move,
+                                      dead_end, end_near)
         iligal_move = 0
         if (curr_pos[0] + pred[0] >= current_maze.shape[0] or
             curr_pos[1] + pred[1] >= current_maze.shape[1] or
                 curr_pos[0] + pred[0] < 0 or curr_pos[1] + pred[1] < 0):
-            score += 10  # out of maze
-            iligal_move = 1
+            score += 7  # out of maze
+            score += iligal_move
+            iligal_move += 1
             # return score
         elif current_maze[curr_pos[0] + pred[0], curr_pos[1]+pred[1]] == END:
             # maze ending bonus
             return score-10*i, 1
         elif current_maze[curr_pos[0] + pred[0], curr_pos[1]+pred[1]] == WALL:
-            score += 10  # run into wall
-            iligal_move = 1
+            score += 7  # run into wall
+            score += iligal_move
+            iligal_move += 1
             # return score
         elif current_maze[curr_pos[0] + pred[0],
                           curr_pos[1]+pred[1]] >= VISITED_POS:
@@ -81,12 +104,12 @@ def run_maze(model, maze, debug):
                 current_maze[curr_pos[0] + pred[0],
                              curr_pos[1]+pred[1]] += 1
             score += current_maze[curr_pos[0] + pred[0],
-                                  curr_pos[1]+pred[1]] - 4
+                                  curr_pos[1]+pred[1]] - 6
             prev_pos = curr_pos.copy()
             curr_pos[0] += pred[0]
             curr_pos[1] += pred[1]
         else:
-            score += 0.1
+            score += 1
             prev_pos = curr_pos.copy()
             curr_pos[0] += pred[0]
             curr_pos[1] += pred[1]
@@ -94,7 +117,7 @@ def run_maze(model, maze, debug):
         new_tiels = update_maze(current_maze, full_maze, new_pos=curr_pos,
                                 old_pos=prev_pos)
         if new_tiels > 0:
-            score -= 30
+            score -= 20
         if debug is True:
             plt.matshow(current_maze)
             plt.show()
@@ -114,26 +137,12 @@ def get_reward(weights):
         reward += r*mazes_weights[i]
         if s == 1:
             solved.append(i)
-        # if r < 30:
-            # run_maze(model, [maze[0].copy(), maze[1]], debug=True)
     print(f'Reward: {-reward/len(mazes)} Solved: {solved}')
     return -(reward/len(mazes))
 
 
-def run_best(weights):
-    global model
-    global mazes
-    model.set_weights(weights)
-    solved = []
-    for i, maze in enumerate(mazes):
-        _, s = run_maze(model, [maze[0].copy(), maze[1]], debug=False)
-        if s == 1:
-            solved.append(i)
-    return solved
-
-
 if __name__ == '__main__':
-    # model.load()
+    model.load()
     weights = model.get_weights()
     es = EvolutionStrategy(weights, get_reward,
                            population_size=50, sigma=0.15,
@@ -142,7 +151,3 @@ if __name__ == '__main__':
         print(f'Round number: {i*5}')
         es.run(iterations=5, print_step=1)
         model.save()
-        solved = run_best(weights)
-        for maze in solved:
-            mazes_weights[maze] = mazes_weights[maze]*1.05
-    run_maze(model, mazes[24], True)
