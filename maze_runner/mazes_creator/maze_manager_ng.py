@@ -1,4 +1,5 @@
 import math
+from collections import defaultdict
 from copy import copy
 from math import sqrt
 
@@ -9,8 +10,8 @@ from consts import UP, DOWN, LEFT, RIGHT
 from .maze_consts import WALL, USER_POS, OPEN, UNSEEN, END, VISITED_POS
 
 
-from daedalus import Maze
-from daedalus._maze import init_random
+# from daedalus import Maze
+# from daedalus._maze import init_random
 # from maze_consts import WALL, USER_POS, OPEN, UNSEEN, END, VISITED_POS
 
 class MazeManager():
@@ -19,6 +20,7 @@ class MazeManager():
         self.known_maze = np.copy(known_maze)
         self.current_pos = [0,0]
         self.prev_pos= [0,0]
+        self.previusly_visited=defaultdict(int)
     def _get_maze_at_pos(self, pos: (int, int)):
         try:
             res = self.full_maze[pos[0]][pos[1]]
@@ -29,19 +31,20 @@ class MazeManager():
 
     def _set_maze_at_post(self, pos: (int, int), val: int):
         if pos[1] >= len(self.full_maze) or pos[0] >= len(self.full_maze):
-            return self.full_maze
-        if self._get_maze_at_pos(pos) == VISITED_POS:
-            return self.full_maze
+            return -1
+        if self.get_val_at_known_maze(pos) == VISITED_POS:
+            return 0
         self.known_maze[pos[0]][pos[1]] = val
         return self.known_maze
 
 
     def _revel_in_1_pos(self, pos):
         res = 0
-        if self._get_maze_at_pos(pos) == UNSEEN:
+        cur_val = self.get_val_at_known_maze(pos)
+        if cur_val == UNSEEN:
             res = 1
-        val = self._get_maze_at_pos(pos)
-        self._set_maze_at_post(pos, val)
+            val = self._get_maze_at_pos(pos)
+            self._set_maze_at_post(pos, val)
         return res
 
     def get_dir_closest_to_end(self):
@@ -58,7 +61,6 @@ class MazeManager():
                 if dist<max_move[1]:
                     max_move=(dir,dist)
         return max_move[0]
-
 
     def _revel_in_pos(self, pos):
         val = self._get_maze_at_pos(pos)
@@ -295,22 +297,20 @@ class MazeManager():
     def update_maze(self,
                     new_pos: [int, int], old_pos: [int, int]):
         if new_pos[0]>=len(self.full_maze) or new_pos[1]>=len(self.full_maze) or new_pos[0]<0 or new_pos[1]<0:
-            return -0
+            return -1
         if self._get_maze_at_pos(new_pos)==WALL:
             return -1
         updated_count = 0
-        # current_maze = _set_maze_at_post(current_maze, old_pos, _get_maze_at_pos(full_maze, old_pos))
-        updated_count += self._revel_in_pos( old_pos)
-        # current_maze[old_pos[0]][old_pos[1]]=_get_maze_at_pos(full_maze,old_pos)
         self._set_maze_at_post( new_pos, USER_POS)
-        updated_count += self.look_down( new_pos)
+        updated_count += self.look_down(new_pos)
         updated_count += self.look_right(new_pos)
-        updated_count += self.look_left( new_pos)
+        updated_count += self.look_left(new_pos)
         updated_count += self.look_up(new_pos)
         self.known_maze[old_pos[0]][old_pos[1]] = VISITED_POS
         self.known_maze[new_pos[0]][new_pos[1]] = USER_POS
         self.current_pos=new_pos
         self.prev_pos=old_pos
+        self.previusly_visited[(new_pos[0],(new_pos[1]))]+=1
         return updated_count
 
     def go_up(self):
@@ -389,6 +389,35 @@ class MazeManager():
             return val==VISITED_POS
         except:
             return False
+    def _num_of_visits(self,pos):
+        return self.previusly_visited[(pos[0],pos[1])]
+
+    def get_least_visited_pos(self):
+        up = self.get_up(self.current_pos)
+        down = self.get_down(self.current_pos)
+        left = self.get_left(self.current_pos)
+        right = self.get_right(self.current_pos)
+        dirs={UP:up,DOWN:down,LEFT:left,RIGHT:right}
+        min_vals = (up,9999)
+        for dir, pos in dirs.items():
+            if self._is_valid_move(pos):
+                visn = self._num_of_visits(pos)
+                if min_vals[1]>visn:
+                    min_vals=(dir,visn)
+        return min_vals[0]
+    def number_of_visits(self, dir):
+        up = self.get_up(self.current_pos)
+        down = self.get_down(self.current_pos)
+        left = self.get_left(self.current_pos)
+        right = self.get_right(self.current_pos)
+        if dir == UP:
+            return self._num_of_visits(up)
+        if dir == DOWN:
+            return self._num_of_visits(down)
+        if dir == LEFT:
+            return self._num_of_visits(left)
+        if dir == RIGHT:
+            return self._num_of_visits(right)
 
     def did_visit(self, dir):
         up = self.get_up(self.current_pos)
@@ -510,9 +539,9 @@ if __name__ == '__main__':
     # m = np.load('mazes.npy')
     pass
     for i in range(100):
-        known, full = make_maze((30, 30), i)
-        plt.imshow(full)
-        plt.show()
+        known, full = make_maze((15, 15), i)
+        # plt.imshow(full)
+        # plt.show()
         # np.save
         # np.save(f'{i}_{known}.npy',)
         mazes.append((known, full))

@@ -108,7 +108,9 @@ def if_then_else(input, output1, output2):
         return run_if_callable(output1)
     else:
         return run_if_callable(output2)
-
+def get_least_visited_pos():
+    global maze
+    return maze.get_least_visited_pos()
 def get_valid_moves():
     global maze
     return maze.get_valid_moves()
@@ -173,6 +175,7 @@ pset.addPrimitive(is_dead_end_dir,[float],bool)
 # pset.addPrimitive(get_valid_moves,[],list)
 pset.addPrimitive(is_wall_dir,[float],bool)
 pset.addPrimitive(did_visit,[float],bool)
+pset.addTerminal(get_least_visited_pos,float)
 # pset.addPrimitive(is_up_wall,[],bool)
 # pset.addPrimitive(is_down_wall,[],bool)
 # pset.addPrimitive(is_left_wall,[],bool)
@@ -191,7 +194,7 @@ pset.addPrimitive(is_wall_dir,[float],bool)
 # pset.addTerminal(go_left, float)
 # pset.addTerminal(go_right, float)
 # pset.addPrimitive(operator.lt, [float, float], bool)
-# pset.addPrimitive(operator.eq, [float, float], bool)
+pset.addPrimitive(operator.eq, [float, float], bool)
 # pset.addTerminal(MAZE_SIZE[0], float, 'size')
 # pset.addTerminal(0, float, 'zero')
 pset.addTerminal(UP,float,'up')
@@ -225,42 +228,54 @@ creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMax)
 def eval_indv(individual, managerers):
     global maze
     score = 0
+    solved_mazes =set()
+    counter = 0
     for manger in managerers:
         valid_steps = 0
-        visited_steps=0
         # m = np.copy(manger)
         maze = MazeManager(manger.full_maze,manger.known_maze)
-
+        counter+=1
+        if counter ==3:
+            continue
         for i in range(MAX_STEPS):
             try:
                 try:
                     func = toolbox.compile(expr=individual)
                 except Exception as e:
-                    return -200,
+                    return -500,
                 old_pos = copy(maze.current_pos)
                 res = func
                 if maze.did_visit(res):
-                    valid_steps -= 1
+                    nov= maze.number_of_visits(res)
+                    valid_steps -=nov *0.5
+                    if nov>10:
+                        score-=50
+                        break
                 s=go_dir(res)
-                if s>0:
-                    plt.imshow(-np.array(list(maze.known_maze)))
-                    plt.show()
-                    pass
+                # if s>0:
+                #     plt.imshow(-np.array(list(maze.known_maze)))
+                #     plt.show()
+                #     pass
                 if s < 0:
-                    score -= 100
+                    score -= 300
                     break
                 new_pos = maze.current_pos
                 if (old_pos[0] == new_pos[0] and old_pos[1] == new_pos[1]):
+                    score-=300
                     break
                 else:
-                    valid_steps+=1
+                    valid_steps+=2
 
-                # if maze._get_maze_at_pos(maze.current_pos) !=
                 score += s+valid_steps
                 if maze.is_close_to_finish():
-                    score += 100,
+                    score += 500
+                    if counter not in solved_mazes:
+                        solved_mazes.add(counter)
+                        score+=100
+                        # print(f". maze {counter}!")
+                    break
             except Exception as e:
-                score=-100
+                score=-200
                 break
         score -= maze.dist_from_end(maze.current_pos)
     if score>=200:
@@ -275,7 +290,7 @@ toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.ex
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 toolbox.register("compile", gp.compile, pset=pset)
 
-toolbox.register("evaluate", eval_indv, managerers=[make_maze_manger_from_file(x) for x in range(20)])
+toolbox.register("evaluate", eval_indv, managerers=[make_maze_manger_from_file(x) for x in range(10)])
 toolbox.register("select", tools.selTournament, tournsize=3)
 toolbox.register("mate", gp.cxOnePoint)
 toolbox.register("expr_mut", gp.genFull, min_=0, max_=2)
@@ -286,7 +301,7 @@ toolbox.decorate("mutate", gp.staticLimit(key=operator.attrgetter("height"), max
 
 
 def main():
-    pop = toolbox.population(n=200)
+    pop = toolbox.population(n=1000)
     hof = tools.HallOfFame(1)
 
     stats_fit = tools.Statistics(lambda ind: ind.fitness.values)
@@ -297,7 +312,7 @@ def main():
     mstats.register("min", numpy.min)
     mstats.register("max", numpy.max)
 
-    pop, log = algorithms.eaSimple(pop, toolbox, 0.6, 0.01, 600, stats=mstats,
+    pop, log = algorithms.eaSimple(pop, toolbox, 0.3, 0.01, 600, stats=mstats,
                                    halloffame=hof, verbose=True)
     return pop, log, hof
 
