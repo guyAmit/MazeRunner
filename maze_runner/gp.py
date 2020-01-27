@@ -45,7 +45,9 @@ def is_finished():
     global maze
     return maze.is_finished()
 
-
+def get_current_direction():
+    global maze
+    return maze.get_current_direction()
 def is_dead_end_left():
     global maze
     return maze.is_dead_end_left(maze.current_pos)
@@ -163,40 +165,24 @@ def get_dir_closest_to_exit():
 def did_visit(dir):
     global maze
     return maze.did_visit(dir)
+
 pset = gp.PrimitiveSetTyped("MAIN", [], float, "IN")
 # pset.addPrimitive(is_finished,[],bool)
 pset.addPrimitive(if_then_else, [bool, float, float], float)
-# pset.addPrimitive(is_dead_end_down, [], bool)
-# pset.addPrimitive(is_dead_end_up, [], bool)
-# pset.addPrimitive(is_dead_end_right, [], bool)
-# pset.addPrimitive(is_dead_end_left, [], bool)
-# pset.addPrimitive(get_dir_closest_to_exit,[],float)
+
+pset.addTerminal(get_dir_closest_to_exit,float)
 pset.addPrimitive(is_dead_end_dir,[float],bool)
-# pset.addPrimitive(get_valid_moves,[],list)
 pset.addPrimitive(is_wall_dir,[float],bool)
 pset.addPrimitive(did_visit,[float],bool)
 pset.addTerminal(get_least_visited_pos,float)
-# pset.addPrimitive(is_up_wall,[],bool)
-# pset.addPrimitive(is_down_wall,[],bool)
-# pset.addPrimitive(is_left_wall,[],bool)
-# pset.addPrimitive(is_right_wall,[],bool)
-pset.addPrimitive(is_wall_dir,[float],bool)
-# pset.addPrimitive(is_prev_pos_down,[],bool)
-# pset.addPrimitive(is_prev_pos_up,[],bool)
-# pset.addPrimitive(is_prev_pos_left,[],bool)
-# pset.addPrimitive(is_prev_pos_right,[],bool)
+pset.addTerminal(get_current_direction,float)
 
-# pset.addPrimitive(prog3, [float, float, float], float)
-# pset.addPrimitive(get_maze_manager,[MazeManager],MazeManager)
-# pset.addPrimitive(go_dir,[float],bool)
-# pset.addTerminal(go_up, float)
-# pset.addTerminal(go_down, float)
-# pset.addTerminal(go_left, float)
-# pset.addTerminal(go_right, float)
+pset.addPrimitive(is_wall_dir,[float],bool)
+
+
 # pset.addPrimitive(operator.lt, [float, float], bool)
 pset.addPrimitive(operator.eq, [float, float], bool)
-# pset.addTerminal(MAZE_SIZE[0], float, 'size')
-# pset.addTerminal(0, float, 'zero')
+
 pset.addTerminal(UP,float,'up')
 pset.addTerminal(DOWN,float,'down')
 pset.addTerminal(LEFT,float,'left')
@@ -232,11 +218,12 @@ def eval_indv(individual, managerers):
     counter = 0
     for manger in managerers:
         valid_steps = 0
+        visited_steps=0
         # m = np.copy(manger)
         maze = MazeManager(manger.full_maze,manger.known_maze)
         counter+=1
-        if counter ==3:
-            continue
+        # if counter ==3:
+        #     continue
         for i in range(MAX_STEPS):
             try:
                 try:
@@ -245,17 +232,16 @@ def eval_indv(individual, managerers):
                     return -500,
                 old_pos = copy(maze.current_pos)
                 res = func
+                if type(res) is not int:
+                    res = func()
                 if maze.did_visit(res):
                     nov= maze.number_of_visits(res)
-                    valid_steps -=nov *0.5
-                    if nov>10:
+                    visited_steps +=nov
+                    if nov>5:
                         score-=50
                         break
                 s=go_dir(res)
-                # if s>0:
-                #     plt.imshow(-np.array(list(maze.known_maze)))
-                #     plt.show()
-                #     pass
+
                 if s < 0:
                     score -= 300
                     break
@@ -264,23 +250,22 @@ def eval_indv(individual, managerers):
                     score-=300
                     break
                 else:
-                    valid_steps+=2
+                    valid_steps+=1
 
-                score += s+valid_steps
+                score += s+valid_steps - visited_steps
                 if maze.is_close_to_finish():
-                    score += 500
+                    score += MAX_STEPS-valid_steps
                     if counter not in solved_mazes:
                         solved_mazes.add(counter)
-                        score+=100
+                        # score+=100
                         # print(f". maze {counter}!")
                     break
             except Exception as e:
                 score=-200
                 break
         score -= maze.dist_from_end(maze.current_pos)
-    if score>=200:
-        pass
-
+    if len(solved_mazes)>0:
+        score=score*len(solved_mazes)/len(managerers)
     return score,
 
 
@@ -301,7 +286,7 @@ toolbox.decorate("mutate", gp.staticLimit(key=operator.attrgetter("height"), max
 
 
 def main():
-    pop = toolbox.population(n=1000)
+    pop = toolbox.population(n=200)
     hof = tools.HallOfFame(1)
 
     stats_fit = tools.Statistics(lambda ind: ind.fitness.values)
@@ -312,7 +297,7 @@ def main():
     mstats.register("min", numpy.min)
     mstats.register("max", numpy.max)
 
-    pop, log = algorithms.eaSimple(pop, toolbox, 0.3, 0.01, 600, stats=mstats,
+    pop, log = algorithms.eaSimple(pop, toolbox, 0.5, 0.1, 600, stats=mstats,
                                    halloffame=hof, verbose=True)
     return pop, log, hof
 

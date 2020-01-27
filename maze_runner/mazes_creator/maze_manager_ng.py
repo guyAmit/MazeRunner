@@ -391,7 +391,22 @@ class MazeManager():
             return False
     def _num_of_visits(self,pos):
         return self.previusly_visited[(pos[0],pos[1])]
-
+    def _eq_pos(self,p1,p2):
+        return p1[0]==p2[0] and p1[1]==p2[1]
+    def get_current_direction(self):
+        up = self.get_up(self.prev_pos)
+        down = self.get_down(self.prev_pos)
+        left = self.get_left(self.prev_pos)
+        right = self.get_right(self.prev_pos)
+        if self._eq_pos(self.current_pos,up):
+            return UP
+        if self._eq_pos(self.current_pos, down):
+            return DOWN
+        if self._eq_pos(self.current_pos, left):
+            return LEFT
+        if self._eq_pos(self.current_pos, right):
+            return RIGHT
+        return RIGHT
     def get_least_visited_pos(self):
         up = self.get_up(self.current_pos)
         down = self.get_down(self.current_pos)
@@ -539,7 +554,7 @@ if __name__ == '__main__':
     # m = np.load('mazes.npy')
     pass
     for i in range(100):
-        known, full = make_maze((15, 15), i)
+        known, full = make_maze((30, 30), i)
         # plt.imshow(full)
         # plt.show()
         # np.save
