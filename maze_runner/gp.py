@@ -10,8 +10,9 @@ from consts import MAZE_SIZE, MAX_STEPS, UP, DOWN, LEFT, RIGHT
 from gif_maker import make_gif
 from mazes_creator.maze_consts import VISITED_POS, WALL, END, STRARTING_POSINGTION
 from mazes_creator.maze_manager import update_maze, get_lsm_features, is_surrounded
-from mazes_creator.maze_manager_ng import make_maze_manger_from_file
-
+from mazes_creator.maze_manager_ng import make_maze_manger_from_file, MazeManager
+import matplotlib.pyplot as plt
+import numpy as np
 global maze
 maze = None
 
@@ -46,43 +47,55 @@ def is_finished():
 
 
 def is_dead_end_left():
+    global maze
     return maze.is_dead_end_left(maze.current_pos)
 
 
 def is_dead_end_right():
+    global maze
     return maze.is_dead_end_right(maze.current_pos)
 
 
 def is_dead_end_up():
+    global maze
     return maze.is_dead_end_up(maze.current_pos)
 
 
 def is_dead_end_down():
+    global maze
     return maze.is_dead_end_down(maze.current_pos)
 
 
 def is_up_wall():
+    global maze
     return maze.is_up_wall()
 
 
 def is_down_wall():
+    global maze
     return maze.is_down_wall()
 
 
 def is_left_wall():
+    global maze
     return maze.is_left_wall()
 
 
 def is_right_wall():
+    global maze
     return maze.is_right_wall()
 
 def is_prev_pos_down():
+    global maze
     return maze.is_prev_pos_down()
 def is_prev_pos_up():
+    global maze
     return maze.is_prev_pos_up()
 def is_prev_pos_left():
+    global maze
     return maze.is_prev_pos_left()
 def is_prev_pos_right():
+    global maze
     return maze.is_prev_pos_right()
 def run_if_callable(input):
     res= input
@@ -97,6 +110,7 @@ def if_then_else(input, output1, output2):
         return run_if_callable(output2)
 
 def get_valid_moves():
+    global maze
     return maze.get_valid_moves()
 
 def progn(*args):
@@ -111,6 +125,7 @@ def prog3(c1,c2,c3):
 #     return partial(progn, out1, out2, out3)
 
 def is_dead_end_dir(dir):
+    global maze
     if dir == UP:
         return is_dead_end_up()
     if dir == DOWN:
@@ -121,6 +136,7 @@ def is_dead_end_dir(dir):
         return is_dead_end_right()
 
 def is_wall_dir(dir):
+    global maze
     if dir==UP:
         return is_up_wall()
     if dir==DOWN:
@@ -130,6 +146,7 @@ def is_wall_dir(dir):
     if dir==RIGHT:
         return is_right_wall()
 def go_dir(dir):
+    global maze
     if dir==UP:
         return go_up()
     if dir==DOWN:
@@ -139,8 +156,10 @@ def go_dir(dir):
     if dir==RIGHT:
         return go_right()
 def get_dir_closest_to_exit():
+    global maze
     return maze.get_dir_closest_to_end()
 def did_visit(dir):
+    global maze
     return maze.did_visit(dir)
 pset = gp.PrimitiveSetTyped("MAIN", [], float, "IN")
 # pset.addPrimitive(is_finished,[],bool)
@@ -149,7 +168,7 @@ pset.addPrimitive(if_then_else, [bool, float, float], float)
 # pset.addPrimitive(is_dead_end_up, [], bool)
 # pset.addPrimitive(is_dead_end_right, [], bool)
 # pset.addPrimitive(is_dead_end_left, [], bool)
-pset.addPrimitive(get_dir_closest_to_exit,[],float)
+# pset.addPrimitive(get_dir_closest_to_exit,[],float)
 pset.addPrimitive(is_dead_end_dir,[float],bool)
 # pset.addPrimitive(get_valid_moves,[],list)
 pset.addPrimitive(is_wall_dir,[float],bool)
@@ -204,13 +223,13 @@ creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMax)
 
 
 def eval_indv(individual, managerers):
+    global maze
     score = 0
     for manger in managerers:
         valid_steps = 0
         visited_steps=0
-        m = copy(manger)
-        global maze
-        maze = m
+        # m = np.copy(manger)
+        maze = MazeManager(manger.full_maze,manger.known_maze)
 
         for i in range(MAX_STEPS):
             try:
@@ -218,15 +237,19 @@ def eval_indv(individual, managerers):
                     func = toolbox.compile(expr=individual)
                 except Exception as e:
                     return -200,
-                old_pos = copy(m.current_pos)
+                old_pos = copy(maze.current_pos)
                 res = func
                 if maze.did_visit(res):
-                    valid_steps -= 0.5
+                    valid_steps -= 1
                 s=go_dir(res)
+                if s>0:
+                    plt.imshow(-np.array(list(maze.known_maze)))
+                    plt.show()
+                    pass
                 if s < 0:
                     score -= 100
                     break
-                new_pos = m.current_pos
+                new_pos = maze.current_pos
                 if (old_pos[0] == new_pos[0] and old_pos[1] == new_pos[1]):
                     break
                 else:
@@ -234,14 +257,15 @@ def eval_indv(individual, managerers):
 
                 # if maze._get_maze_at_pos(maze.current_pos) !=
                 score += s+valid_steps
-                if m.is_finished():
+                if maze.is_close_to_finish():
                     score += 100,
             except Exception as e:
                 score=-100
                 break
-        score -= m.dist_from_end(m.current_pos)
+        score -= maze.dist_from_end(maze.current_pos)
     if score>=200:
         pass
+
     return score,
 
 
@@ -251,7 +275,7 @@ toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.ex
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 toolbox.register("compile", gp.compile, pset=pset)
 
-toolbox.register("evaluate", eval_indv, managerers=[make_maze_manger_from_file(x) for x in range(2)])
+toolbox.register("evaluate", eval_indv, managerers=[make_maze_manger_from_file(x) for x in range(20)])
 toolbox.register("select", tools.selTournament, tournsize=3)
 toolbox.register("mate", gp.cxOnePoint)
 toolbox.register("expr_mut", gp.genFull, min_=0, max_=2)
@@ -262,7 +286,7 @@ toolbox.decorate("mutate", gp.staticLimit(key=operator.attrgetter("height"), max
 
 
 def main():
-    pop = toolbox.population(n=1000)
+    pop = toolbox.population(n=200)
     hof = tools.HallOfFame(1)
 
     stats_fit = tools.Statistics(lambda ind: ind.fitness.values)

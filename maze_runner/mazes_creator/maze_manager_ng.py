@@ -15,8 +15,8 @@ from daedalus._maze import init_random
 
 class MazeManager():
     def __init__(self, full_maze,known_maze):
-        self.full_maze = full_maze
-        self.known_maze = known_maze
+        self.full_maze = np.copy(full_maze)
+        self.known_maze = np.copy(known_maze)
         self.current_pos = [0,0]
         self.prev_pos= [0,0]
     def _get_maze_at_pos(self, pos: (int, int)):
@@ -32,8 +32,8 @@ class MazeManager():
             return self.full_maze
         if self._get_maze_at_pos(pos) == VISITED_POS:
             return self.full_maze
-        self.full_maze[pos[0]][pos[1]] = val
-        return self.full_maze
+        self.known_maze[pos[0]][pos[1]] = val
+        return self.known_maze
 
 
     def _revel_in_1_pos(self, pos):
@@ -302,13 +302,13 @@ class MazeManager():
         # current_maze = _set_maze_at_post(current_maze, old_pos, _get_maze_at_pos(full_maze, old_pos))
         updated_count += self._revel_in_pos( old_pos)
         # current_maze[old_pos[0]][old_pos[1]]=_get_maze_at_pos(full_maze,old_pos)
-        current_maze = self._set_maze_at_post( new_pos, USER_POS)
+        self._set_maze_at_post( new_pos, USER_POS)
         updated_count += self.look_down( new_pos)
         updated_count += self.look_right(new_pos)
         updated_count += self.look_left( new_pos)
         updated_count += self.look_up(new_pos)
-        current_maze[new_pos[0]][new_pos[1]] = USER_POS
-        current_maze[old_pos[0]][old_pos[1]] = VISITED_POS
+        self.known_maze[old_pos[0]][old_pos[1]] = VISITED_POS
+        self.known_maze[new_pos[0]][new_pos[1]] = USER_POS
         self.current_pos=new_pos
         self.prev_pos=old_pos
         return updated_count
@@ -333,6 +333,12 @@ class MazeManager():
     def is_finished(self):
         res = self.current_pos[0]+1==len(self.full_maze) and self.current_pos[1]+1==len(self.full_maze)
         return res
+    def is_close_to_finish(self):
+        res1 = abs(self.current_pos[0]-len(self.full_maze)+1)
+        res2 = abs(self.current_pos[1]-len(self.full_maze)+1)
+        if res1<=1 and res2<=1:
+            return True
+        return False
     def is_up_wall(self):
         res = self._get_maze_at_pos(self.get_up(self.current_pos))==WALL
         if res is None:
@@ -370,18 +376,25 @@ class MazeManager():
         res.append(angle)
         res = np.array(res)
         return res
+    def get_val_at_known_maze(self,pos):
+        try:
+            res = self.known_maze[pos[0]][pos[1]]
+            return res
+        except IndexError:
+            return None
+
     def did_visit_in_pos(self, pos):
         try:
-            val = self._get_maze_at_pos(pos)
+            val = self.get_val_at_known_maze(pos)
             return val==VISITED_POS
         except:
             return False
 
     def did_visit(self, dir):
-        up = [self.current_pos[0] - 1, self.current_pos[1]]
-        down = [self.current_pos[0] + 1, self.current_pos[1]]
-        left = [self.current_pos[0], self.current_pos[1] - 1]
-        right = [self.current_pos[0], self.current_pos[1] + 1]
+        up = self.get_up(self.current_pos)
+        down = self.get_down(self.current_pos)
+        left = self.get_left(self.current_pos)
+        right = self.get_right(self.current_pos)
 
         if dir ==UP:
             return self.did_visit_in_pos(up)
@@ -439,7 +452,7 @@ class MazeManager():
 def make_maze(size, seed):
     real_maze = Maze(*size)
     init_random(seed)
-    Maze.create_perfect2(real_maze, nEntrancePos=0)
+    Maze.create_tree(real_maze, nEntrancePos=0)
     known_maze = np.ndarray(shape=(size[0], size[1]), dtype=int)
     known_maze.fill(UNSEEN)
     # m = Maze.create_perfect(maze, nEntrancePos=0, nRndBias=2)
@@ -497,7 +510,7 @@ if __name__ == '__main__':
     # m = np.load('mazes.npy')
     pass
     for i in range(100):
-        known, full = make_maze((13, 13), i)
+        known, full = make_maze((30, 30), i)
         plt.imshow(full)
         plt.show()
         # np.save
