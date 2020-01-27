@@ -259,6 +259,7 @@ def update_maze(current_maze: np.array, full_maze: np.array,
     current_maze[old_pos[0]][old_pos[1]] = VISITED_POS
     return updated_count
 
+# def maze_go_left(new_maze, old_maze, curre_pos)
 
 """
 1 wall
@@ -349,7 +350,9 @@ if __name__ == '__main__':
     # m = np.load('mazes.npy')
     pass
     for i in range(100):
-        known, full = make_maze((15, 15), i)
+        known, full = make_maze((30, 30), i)
+        plt.imshow(full)
+        plt.show()
         # np.save
         # np.save(f'{i}_{known}.npy',)
         mazes.append((known, full))
