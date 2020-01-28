@@ -144,7 +144,7 @@ if __name__ == '__main__':
     # model.load()
     weights = model.get_weights()
     es = EvolutionStrategy(weights, get_reward,
-                           population_size=50, sigma=0.15,
+                           population_size=50, sigma=0.25,
                            learning_rate=0.03, num_threads=8)
     for i in range(10):
         print(f'Round number: {i*5}')
