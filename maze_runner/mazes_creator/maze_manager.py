@@ -17,7 +17,7 @@ def _get_maze_at_pos(maze: np.array, pos: (int, int)):
         res = maze[pos[0]][pos[1]]
         return res
     except IndexError:
-        return None
+        return -1
 
 
 def _set_maze_at_post(maze: np.array, pos: (int, int), val: int):
@@ -246,9 +246,9 @@ def angle_from_end(maze, pos):
 
 def end_near_indicitor(maze, pos):
     features = np.zeros((4,))
-    for i, d in enumerate([(1, 0), (-1, 0), (0, 1), (0, -1)]):
+    for i, d in enumerate([(1, 0), (-1, 0), (0, -1), (0, 1)]):
         if pos[0]+d[0] < maze.shape[0] and pos[1]+d[1] < maze.shape[1]:
-            end = 0 if maze[pos[0]+d[0], pos[1]+d[1]] == END else 0
+            end = 1 if maze[pos[0]+d[0], pos[1]+d[1]] == END else 0
             features[i] = end
         else:
             features[i] = 0
@@ -312,13 +312,15 @@ def get_right(pos):
 
 
 def get_lsm_features(maze, pos):
-    directions_vals = [_get_maze_at_pos(maze, get_up(pos)),
-                       _get_maze_at_pos(maze, get_down(pos)),
-                       _get_maze_at_pos(maze, get_left(pos)),
-                       _get_maze_at_pos(maze, get_right(pos))]
+    directions_vals = [
+        _get_maze_at_pos(maze, get_down(pos)),
+        _get_maze_at_pos(maze, get_up(pos)),
+        _get_maze_at_pos(maze, get_left(pos)),
+        _get_maze_at_pos(maze, get_right(pos))
+    ]
     res = []
     for p in directions_vals:
-        if p == OPEN:
+        if p == OPEN or p >= VISITED_POS:
             res.append(1)
         else:
             res.append(0)

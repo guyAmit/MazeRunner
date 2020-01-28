@@ -1,16 +1,15 @@
 import datetime
 
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
 from evostra import EvolutionStrategy
 
 from consts import MAX_STEPS, MAZE_SIZE, TESTSET_SIZE, TRAINSET_SIZE
-from gif_maker import make_gif
 from mazes_creator.maze_consts import (END, MAZE_ENDING, STRARTING_POSINGTION,
                                        USER_POS, VISITED_POS, WALL)
-from mazes_creator.maze_manager import (get_lsm_features, is_surrounded,
-                                        make_maze_from_file, show_maze,
-                                        update_maze, end_near_indicitor)
+from mazes_creator.maze_manager import (end_near_indicitor, get_lsm_features,
+                                        is_surrounded, make_maze_from_file,
+                                        show_maze, update_maze)
 from models.agent_model import Agent_Model
 
 mazes = [make_maze_from_file(i) for i in range(TRAINSET_SIZE)]
@@ -134,7 +133,8 @@ def get_reward(weights):
     solved = []
     for i, maze in enumerate(mazes):
         r, s = run_maze(model, [maze[0].copy(), maze[1]], debug=False)
-        reward += r*mazes_weights[i]
+        reward += r
+        # *mazes_weights[i]
         if s == 1:
             solved.append(i)
     print(f'Reward: {-reward/len(mazes)} Solved: {solved}')
@@ -144,10 +144,12 @@ def get_reward(weights):
 if __name__ == '__main__':
     model.load()
     weights = model.get_weights()
-    es = EvolutionStrategy(weights, get_reward,
-                           population_size=50, sigma=0.15,
-                           learning_rate=0.03, num_threads=8)
-    for i in range(10):
-        print(f'Round number: {i*5}')
-        es.run(iterations=5, print_step=1)
-        model.save()
+    # es = EvolutionStrategy(weights, get_reward,
+    #                        population_size=50, sigma=0.15,
+    #                        learning_rate=0.03, num_threads=8)
+    # for i in range(1):
+    #     print(f'Round number: {i*5}')
+    #     es.run(iterations=2, print_step=1)
+    #     model.save()
+    run_maze(model, mazes[0], debug=True)
+    # print(get_reward(weights))
