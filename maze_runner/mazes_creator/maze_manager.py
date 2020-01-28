@@ -13,10 +13,11 @@ from .maze_consts import WALL, USER_POS, OPEN, UNSEEN, END, VISITED_POS
 
 
 def _get_maze_at_pos(maze: np.array, pos: (int, int)):
-    try:
+    if ((pos[0] < maze.shape[0] and pos[0] >= 0) and
+            (pos[1] < maze.shape[1] and pos[1] >= 0)):
         res = maze[pos[0]][pos[1]]
         return res
-    except IndexError:
+    else:
         return -1
 
 
@@ -247,7 +248,8 @@ def angle_from_end(maze, pos):
 def end_near_indicitor(maze, pos):
     features = np.zeros((4,))
     for i, d in enumerate([(1, 0), (-1, 0), (0, -1), (0, 1)]):
-        if pos[0]+d[0] < maze.shape[0] and pos[1]+d[1] < maze.shape[1]:
+        if (pos[0]+d[0] < maze.shape[0] and pos[0]+d[0] >= 0 and
+                pos[1]+d[1] >= 0 and pos[1]+d[1] < maze.shape[1]):
             end = 1 if maze[pos[0]+d[0], pos[1]+d[1]] == END else 0
             features[i] = end
         else:
@@ -290,7 +292,7 @@ def make_maze(size, seed):
 
 
 def make_maze_from_file(index):
-    m = np.load('mazes_creator//mazes.npy')
+    m = np.load('mazes_creator//mazes_20.npy')
     known, full = m[index]
     return known, full
 
@@ -318,6 +320,7 @@ def get_lsm_features(maze, pos):
         _get_maze_at_pos(maze, get_left(pos)),
         _get_maze_at_pos(maze, get_right(pos))
     ]
+    # print(directions_vals)
     res = []
     for p in directions_vals:
         if p == OPEN or p >= VISITED_POS:

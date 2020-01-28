@@ -10,18 +10,11 @@ from mazes_creator.maze_manager import (end_near_indicitor, get_lsm_features,
                                         show_maze, update_maze)
 
 mazes = [make_maze_from_file(i) for i in range(TRAINSET_SIZE)]
-mazes_weights = [1]*TRAINSET_SIZE
-mazes_weights[0] = 2
-mazes_weights[6] = 2
-mazes_weights[7] = 2
-mazes_weights[11] = 2
-mazes_weights[12] = 2
-mazes_weights[17] = 2
-mazes_weights[21] = 2
 
 
 def predict(curr_pos, curr_direction,
             current_maze, directions_features, end_near, memeory):
+    # print(directions_features)
     open_directoins = []
     for i, x in enumerate(zip(directions_features, end_near)):
         if x[1] == 1:
@@ -113,7 +106,7 @@ def get_reward():
     solved = []
     for i, maze in enumerate(mazes):
         r, s = run_maze([maze[0].copy(), maze[1]], debug=False)
-        reward += r*mazes_weights[i]
+        reward += r
         if s == 1:
             solved.append(i)
     print(f'Reward: {-reward/len(mazes)} Solved: {solved}')
@@ -145,5 +138,5 @@ def get_oposite_direction(i):
 
 
 if __name__ == '__main__':
-    run_maze(mazes[2], debug=True)
-    # print(get_reward())
+    # run_maze(mazes[0], debug=False)
+    print(get_reward())
