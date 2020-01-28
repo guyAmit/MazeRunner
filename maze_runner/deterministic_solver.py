@@ -79,8 +79,7 @@ def run_maze(maze, debug):
             # return score
         elif current_maze[curr_pos[0] + pred[0],
                           curr_pos[1]+pred[1]] >= VISITED_POS:
-            score += current_maze[curr_pos[0] + pred[0],
-                                  curr_pos[1]+pred[1]] - 6
+            score += memeory[curr_pos[0]+pred[0], curr_pos[1]+pred[1]]
             prev_pos = curr_pos.copy()
             curr_pos[0] += pred[0]
             curr_pos[1] += pred[1]

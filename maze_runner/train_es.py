@@ -14,45 +14,50 @@ from models.agent_model import Agent_Model
 
 mazes = [make_maze_from_file(i) for i in range(TRAINSET_SIZE)]
 model = Agent_Model(net_type='dense', img_size=MAZE_SIZE[0])
-mazes_weights = [1]*TRAINSET_SIZE
-mazes_weights[0] = 2
-mazes_weights[6] = 2
-mazes_weights[7] = 2
-mazes_weights[11] = 2
-mazes_weights[12] = 2
-mazes_weights[17] = 2
-mazes_weights[21] = 2
+
+
+def convert_to_directions(pred):
+    if pred == 0:
+        return (1, 0)
+    if pred == 1:
+        return (-1, 0)
+    if pred == 2:
+        return (0, -1)
+    if pred == 3:
+        return (0, 1)
+    return
+
+
+def times_visited(memory, open_directions):
+    feature = np.zeros((4, ))
+    for i, direction in enumerate(open_directions):
+        if direction == 1:
+            _dir = convert_to_directions(i)
+            visited = memory[_dir[0], _dir[1]]
+            feature[i] = visited
+        else:
+            feature[i] = -1
+    return feature
 
 
 def neural_network_predict(
         model,
         directions_features,
-        lstm_featuers,
         current_maze,
-        visited,
         iligal_move,
-        dead_end,
-        end_near):
+        end_near,
+        times_visited):
     if model.net_type == 'cnn':
         pred = model.predict(
-            lstm_featuers=directions_features[:4],
+            lstm_featuers=directions_features,
             img=current_maze.reshape(
                 (1, MAZE_SIZE[0], MAZE_SIZE[1], 1)),
-            iligal_move=np.array([iligal_move]),
-            dead_end=np.array([dead_end]))
-
-    elif model.net_type == 'lstm':
-        lstm_featuers[:, i] = directions_features
-        if i != 0:
-            lstm_featuers[:, i-1, pred] = -1
-        pred = model.predict(lstm_features=lstm_featuers)
+            iligal_move=np.array([iligal_move]))
     else:
         #  dense
         pred = model.predict(lstm_featuers=directions_features,
-                             visited=visited,
-                             dead_end=dead_end,
-                             iligal_move=1 if iligal_move > 0 else 0,
-                             end_near_indicator=end_near)
+                             end_near_indicator=end_near,
+                             times_visited=times_visited)
     return pred
 
 
@@ -63,24 +68,21 @@ def run_maze(model, maze, debug):
     prev_pos = curr_pos.copy()
     score = 0
     iligal_move = 0
-    dead_end = 0
-    lstm_features = np.zeros((1, MAX_STEPS, 6))
+    memeory = np.zeros(full_maze.shape)
+    memeory[0, 0] = 1
+
     for i in range(MAX_STEPS):
         #  extract maze features:
         directions_features = get_lsm_features(
-            current_maze, curr_pos).reshape(-1)
-        dead_end = 1 if is_surrounded(
-            current_maze, curr_pos) is not None else 0
-        visited = (current_maze[curr_pos[0],
-                                curr_pos[1]]+1
-                   - VISITED_POS if current_maze[curr_pos[0],
-                                                 curr_pos[1]]
-                   >= VISITED_POS else 0)
+            current_maze, curr_pos).reshape(-1)[:4]
+        times_visited_feature = times_visited(memeory, directions_features)
         end_near = end_near_indicitor(current_maze, curr_pos)
-        pred = neural_network_predict(model, directions_features,
-                                      lstm_features,
-                                      current_maze, visited, iligal_move,
-                                      dead_end, end_near)
+        pred = neural_network_predict(model=model,
+                                      directions_features=directions_features,
+                                      current_maze=current_maze,
+                                      iligal_move=iligal_move,
+                                      end_near=end_near,
+                                      times_visited=times_visited_feature)
         iligal_move = 0
         if (curr_pos[0] + pred[0] >= current_maze.shape[0] or
             curr_pos[1] + pred[1] >= current_maze.shape[1] or
@@ -99,11 +101,7 @@ def run_maze(model, maze, debug):
             # return score
         elif current_maze[curr_pos[0] + pred[0],
                           curr_pos[1]+pred[1]] >= VISITED_POS:
-            if model.net_type == 'dense':
-                current_maze[curr_pos[0] + pred[0],
-                             curr_pos[1]+pred[1]] += 1
-            score += current_maze[curr_pos[0] + pred[0],
-                                  curr_pos[1]+pred[1]] - 6
+            score += memeory[curr_pos[0]+pred[0], curr_pos[1]+pred[1]]
             prev_pos = curr_pos.copy()
             curr_pos[0] += pred[0]
             curr_pos[1] += pred[1]
@@ -113,6 +111,7 @@ def run_maze(model, maze, debug):
             curr_pos[0] += pred[0]
             curr_pos[1] += pred[1]
 
+        memeory[curr_pos[0], curr_pos[1]] += 1
         new_tiels = update_maze(current_maze, full_maze, new_pos=curr_pos,
                                 old_pos=prev_pos)
         if new_tiels > 0:
@@ -142,14 +141,14 @@ def get_reward(weights):
 
 
 if __name__ == '__main__':
-    model.load()
+    # model.load()
     weights = model.get_weights()
-    # es = EvolutionStrategy(weights, get_reward,
-    #                        population_size=50, sigma=0.15,
-    #                        learning_rate=0.03, num_threads=8)
-    # for i in range(1):
-    #     print(f'Round number: {i*5}')
-    #     es.run(iterations=2, print_step=1)
-    #     model.save()
-    run_maze(model, mazes[0], debug=True)
+    es = EvolutionStrategy(weights, get_reward,
+                           population_size=50, sigma=0.15,
+                           learning_rate=0.03, num_threads=8)
+    for i in range(10):
+        print(f'Round number: {i*5}')
+        es.run(iterations=5, print_step=1)
+        model.save()
+    # run_maze(model, mazes[0], debug=True)
     # print(get_reward(weights))

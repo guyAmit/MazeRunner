@@ -10,17 +10,15 @@ def build_cnn_model(img_size):
     img = Input(shape=(img_size, img_size, 1), name='img')
     lstm_features = Input(shape=(4,), name='lstm')
     iligal_move = Input(shape=(1,), name='iligal_move')
-    dead_end = Input(shape=(1,), name='dead_end')
 
     inputs = {'img': img,
               'lstm': lstm_features,
-              'iligal_move': iligal_move,
-              'dead_end': dead_end}
+              'iligal_move': iligal_move}
 
     y = Conv2D(filters=24, kernel_size=5, strides=1, padding='same')(img)
     y = MaxPool2D(pool_size=(2, 2), strides=(2, 2), padding='same')(y)
     y = Flatten()(y)
-    x = Concatenate()([y, lstm_features, iligal_move, dead_end])
+    x = Concatenate()([y, lstm_features, iligal_move])
     x = Dense(units=10, activation='tanh')(x)
     x = Dense(units=4, activation='softmax')(x)
     model = Model(inputs=inputs, outputs=x)
@@ -38,7 +36,7 @@ def build_lstm_model(time_stamps, feature_number):
 
 def build_dense_model(feature_number):
     # directions0-3, end_near_indicator4-7,
-    # direction, distance, visited, dead_end, iligal_move,
+    # times_visited8-11
     inputs = Input(shape=(feature_number,))
     x = Dense(units=20, activation='tanh')(inputs)
     x = Dense(units=10, activation='tanh')(x)
@@ -53,9 +51,9 @@ def convert_to_directions(pred):
     if pred == 1:
         return (-1, 0)
     if pred == 2:
-        return (0, 1)
-    if pred == 3:
         return (0, -1)
+    if pred == 3:
+        return (0, 1)
     return
 
 
@@ -66,31 +64,25 @@ class Agent_Model():
         self.net_type = net_type
         if net_type == 'cnn':
             self.model = build_cnn_model(img_size=img_size)
-        elif net_type == 'lstm':
-            self.model = build_lstm_model(time_stamps=MAX_STEPS,
-                                          feature_number=6)
         else:
-            self.model = build_dense_model(feature_number=13)
+            self.model = build_dense_model(feature_number=12)
 
-    def predict(self, lstm_featuers=None, visited=None,
+    def predict(self, lstm_featuers=None,
                 end_near_indicator=None, img=None,
-                iligal_move=None, dead_end=None):
+                iligal_move=None, times_visited=None):
         if self.net_type == 'cnn':
             img = img / 255
             inputs = {'img': img,
                       'lstm': lstm_featuers.reshape(1, 4),
-                      'iligal_move': iligal_move,
-                      'dead_end': dead_end}
+                      'iligal_move': iligal_move}
 
             pred = self.model.predict(inputs)
-        elif self.net_type == 'lstm':
-            pred = self.model.predict(lstm_featuers)
         else:
             featuers = np.concatenate((lstm_featuers,
                                        end_near_indicator,
-                                       [visited, dead_end,
-                                        iligal_move])).reshape(1, -1)
+                                       times_visited)).reshape(1, -1)
             pred = self.model.predict(featuers)
+
         idx = np.argmax(pred, axis=1)
         return convert_to_directions(idx)
 
