@@ -35,26 +35,14 @@ def build_lstm_model(time_stamps, feature_number):
 
 
 def build_dense_model(feature_number):
-    # directions0-3, end_near_indicator4-7,
-    # times_visited8-11
+    # directions0-3, curr_direction4-7,end_near_indicator8-11,
+    # times_visited12-15
     inputs = Input(shape=(feature_number,))
-    x = Dense(units=20, activation='tanh')(inputs)
-    x = Dense(units=10, activation='tanh')(x)
+    x = Dense(units=25, activation='relu')(inputs)
+    x = Dense(units=10, activation='relu')(x)
     x = Dense(units=4, activation='softmax')(x)
     model = Model(inputs=inputs, outputs=x)
     return model
-
-
-def convert_to_directions(pred):
-    if pred == 0:
-        return (1, 0)
-    if pred == 1:
-        return (-1, 0)
-    if pred == 2:
-        return (0, -1)
-    if pred == 3:
-        return (0, 1)
-    return
 
 
 class Agent_Model():
@@ -65,9 +53,9 @@ class Agent_Model():
         if net_type == 'cnn':
             self.model = build_cnn_model(img_size=img_size)
         else:
-            self.model = build_dense_model(feature_number=12)
+            self.model = build_dense_model(feature_number=16)
 
-    def predict(self, lstm_featuers=None,
+    def predict(self, lstm_featuers=None, oposite_direction=None,
                 end_near_indicator=None, img=None,
                 iligal_move=None, times_visited=None):
         if self.net_type == 'cnn':
@@ -79,12 +67,13 @@ class Agent_Model():
             pred = self.model.predict(inputs)
         else:
             featuers = np.concatenate((lstm_featuers,
+                                       oposite_direction,
                                        end_near_indicator,
                                        times_visited)).reshape(1, -1)
             pred = self.model.predict(featuers)
 
         idx = np.argmax(pred, axis=1)
-        return convert_to_directions(idx)
+        return idx
 
     def get_weights(self):
         weights = []

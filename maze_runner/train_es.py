@@ -16,6 +16,20 @@ mazes = [make_maze_from_file(i) for i in range(TRAINSET_SIZE)]
 model = Agent_Model(net_type='dense', img_size=MAZE_SIZE[0])
 
 
+def get_oposite_direction(i):
+    feature = np.zeros((4,))
+    if i == 0:
+        feature[1] = 1
+        return feature
+    if i == 1:
+        feature[0] = 1
+    if i == 2:
+        feature[3] = 1
+    if i == 3:
+        feature[2] = 1
+    return feature
+
+
 def convert_to_directions(pred):
     if pred == 0:
         return (1, 0)
@@ -43,6 +57,7 @@ def times_visited(memory, open_directions):
 def neural_network_predict(
         model,
         directions_features,
+        oposite_direction,
         current_maze,
         iligal_move,
         end_near,
@@ -56,6 +71,7 @@ def neural_network_predict(
     else:
         #  dense
         pred = model.predict(lstm_featuers=directions_features,
+                             oposite_direction=oposite_direction,
                              end_near_indicator=end_near,
                              times_visited=times_visited)
     return pred
@@ -67,6 +83,7 @@ def run_maze(model, maze, debug):
     curr_pos = np.array(STRARTING_POSINGTION)
     prev_pos = curr_pos.copy()
     score = 0
+    curr_dirr = 1
     iligal_move = 0
     memeory = np.zeros(full_maze.shape)
     memeory[0, 0] = 1
@@ -77,12 +94,16 @@ def run_maze(model, maze, debug):
             current_maze, curr_pos).reshape(-1)[:4]
         times_visited_feature = times_visited(memeory, directions_features)
         end_near = end_near_indicitor(current_maze, curr_pos)
+        oposite_direction = get_oposite_direction(curr_dirr)
         pred = neural_network_predict(model=model,
                                       directions_features=directions_features,
+                                      oposite_direction=oposite_direction,
                                       current_maze=current_maze,
                                       iligal_move=iligal_move,
                                       end_near=end_near,
                                       times_visited=times_visited_feature)
+        curr_dirr = pred
+        pred = convert_to_directions(pred)
         iligal_move = 0
         if (curr_pos[0] + pred[0] >= current_maze.shape[0] or
             curr_pos[1] + pred[1] >= current_maze.shape[1] or
@@ -101,7 +122,7 @@ def run_maze(model, maze, debug):
             # return score
         elif current_maze[curr_pos[0] + pred[0],
                           curr_pos[1]+pred[1]] >= VISITED_POS:
-            score += memeory[curr_pos[0]+pred[0], curr_pos[1]+pred[1]]
+            score += 0.6*(memeory[curr_pos[0]+pred[0], curr_pos[1]+pred[1]]+1)
             prev_pos = curr_pos.copy()
             curr_pos[0] += pred[0]
             curr_pos[1] += pred[1]
@@ -144,11 +165,11 @@ if __name__ == '__main__':
     # model.load()
     weights = model.get_weights()
     es = EvolutionStrategy(weights, get_reward,
-                           population_size=50, sigma=0.25,
-                           learning_rate=0.03, num_threads=8)
-    for i in range(10):
+                           population_size=60, sigma=0.4,
+                           learning_rate=0.1, num_threads=8)
+    for i in range(20):
         print(f'Round number: {i*5}')
-        es.run(iterations=5, print_step=1)
+        es.run(iterations=10, print_step=1)
         model.save()
-    # run_maze(model, mazes[0], debug=True)
+    # run_maze(model, mazes[1], debug=True)
     # print(get_reward(weights))

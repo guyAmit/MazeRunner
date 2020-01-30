@@ -292,7 +292,7 @@ def make_maze(size, seed):
 
 
 def make_maze_from_file(index):
-    m = np.load('mazes_creator//mazes_20.npy')
+    m = np.load('mazes_creator//mazes.npy')
     known, full = m[index]
     return known, full
 
