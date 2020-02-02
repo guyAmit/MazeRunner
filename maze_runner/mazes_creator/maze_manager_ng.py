@@ -7,12 +7,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from consts import UP, DOWN, LEFT, RIGHT
-from .maze_consts import WALL, USER_POS, OPEN, UNSEEN, END, VISITED_POS
 
 
-# from daedalus import Maze
-# from daedalus._maze import init_random
+from daedalus import Maze
+from daedalus._maze import init_random
 # from maze_consts import WALL, USER_POS, OPEN, UNSEEN, END, VISITED_POS
+from .maze_consts import WALL, USER_POS, OPEN, UNSEEN, END, VISITED_POS
 
 class MazeManager():
     def __init__(self, full_maze,known_maze):
@@ -23,6 +23,8 @@ class MazeManager():
         self.previusly_visited=defaultdict(int)
     def _get_maze_at_pos(self, pos: (int, int)):
         try:
+            if pos[0]<0 or pos[1]<0 or pos[0]>=len(self.known_maze) or pos[1]>=len(self.known_maze):
+                return None
             res = self.full_maze[pos[0]][pos[1]]
             return res
         except IndexError:
@@ -333,12 +335,31 @@ class MazeManager():
     def is_finished(self):
         res = self.current_pos[0]+1==len(self.full_maze) and self.current_pos[1]+1==len(self.full_maze)
         return res
-    def is_close_to_finish(self):
-        res1 = abs(self.current_pos[0]-len(self.full_maze)+1)
-        res2 = abs(self.current_pos[1]-len(self.full_maze)+1)
-        if res1<=1 and res2<=1:
+    def _close_to_finis_right(self, cur_pos):
+        if not self._is_valid_move(cur_pos):
+            return False
+        if self._get_maze_at_pos(cur_pos) == WALL:
+            return False
+        if cur_pos[0]== len(self.known_maze)-1 and cur_pos[1]== len(self.known_maze)-1:
             return True
-        return False
+        return self._close_to_finis_right(self.get_right(cur_pos))
+    def _close_to_finish_up(self, cur_pos):
+        if not self._is_valid_move(cur_pos):
+            return False
+        if self._get_maze_at_pos(cur_pos) == WALL:
+            return False
+        if cur_pos[0]== len(self.known_maze)-1 and cur_pos[1]== len(self.known_maze)-1:
+            return True
+        return self._close_to_finish_up(self.get_up(cur_pos))
+    def close_to_finish(self,cur_pos):
+        return self._close_to_finis_right(cur_pos) or self._close_to_finish_up(cur_pos)
+    def is_close_to_finish(self):
+        return self.close_to_finish(self.current_pos)
+        # res1 = abs(self.current_pos[0]-len(self.full_maze)+1)
+        # res2 = abs(self.current_pos[1]-len(self.full_maze)+1)
+        # if res1<=1 and res2<=1:
+        #     return True
+        # return False
     def is_up_wall(self):
         res = self._get_maze_at_pos(self.get_up(self.current_pos))==WALL
         if res is None:
@@ -433,6 +454,33 @@ class MazeManager():
             return self._num_of_visits(left)
         if dir == RIGHT:
             return self._num_of_visits(right)
+    def get_value_from_dir(self, cur_pos, func_main, func_side1,func_side2,cur_res):
+        if not self._is_valid_move(cur_pos):
+            return cur_res
+        if self._get_maze_at_pos(cur_pos)==WALL:
+            return cur_res
+        side1 = func_side1(cur_pos)
+        side2= func_side2(cur_pos)
+        res=0
+        if self._is_valid_move(side1):
+            if self._get_maze_at_pos(side1) == OPEN:
+                res+=1
+        if self._is_valid_move(side2):
+            if self._get_maze_at_pos(side2) == OPEN:
+                res+=1
+        return self.get_value_from_dir(func_main(cur_pos),func_main,func_side1,func_side2,cur_res+res)
+
+    def get_most_valuable_dir(self):
+        up = self.get_value_from_dir(self.current_pos,self.get_up,self.get_left,self.get_right,0)
+        down = self.get_value_from_dir(self.current_pos,self.get_down,self.get_left,self.get_right,0)
+        left = self.get_value_from_dir(self.current_pos,self.get_left,self.get_up,self.get_down,0)
+        right = self.get_value_from_dir(self.current_pos,self.get_right,self.get_up,self.get_down,0)
+        res = {UP:up,DOWN:down,LEFT:left,RIGHT:right}
+        max_way = (UP,0)
+        for dir, val in res.items():
+            if val>max_way[1]:
+                max_way=(dir,val)
+        return max_way[0]
 
     def did_visit(self, dir):
         up = self.get_up(self.current_pos)
@@ -451,6 +499,8 @@ class MazeManager():
     def _is_valid_move(self, new_pos):
         try:
             res = self._get_maze_at_pos(new_pos)
+            if res is None:
+                return False
             if res != WALL:
                 return True
             return False
@@ -483,6 +533,7 @@ class MazeManager():
         if direction == RIGHT:
             new_pos=self.get_right(old_pos)
         return self.update_maze(new_pos,old_pos)
+
 # def maze_go_left(new_maze, old_maze, curre_pos)
 
 """
@@ -496,7 +547,7 @@ class MazeManager():
 def make_maze(size, seed):
     real_maze = Maze(*size)
     init_random(seed)
-    Maze.create_tree(real_maze, nEntrancePos=0)
+    Maze.create_perfect(real_maze, nEntrancePos=0)
     known_maze = np.ndarray(shape=(size[0], size[1]), dtype=int)
     known_maze.fill(UNSEEN)
     # m = Maze.create_perfect(maze, nEntrancePos=0, nRndBias=2)
@@ -553,8 +604,10 @@ if __name__ == '__main__':
     mazes = []
     # m = np.load('mazes.npy')
     pass
+    s= 20
     for i in range(100):
-        known, full = make_maze((30, 30), i)
+        known, full = make_maze((s, s), i)
+        # s+=1
         # plt.imshow(full)
         # plt.show()
         # np.save
