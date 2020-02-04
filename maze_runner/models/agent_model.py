@@ -1,120 +1,80 @@
 import numpy as np
 import pickle
-from tensorflow.keras.layers import (
-    Conv2D, Flatten, Concatenate, Input, MaxPool2D, Dense, LSTM)
-from tensorflow.keras import Model
+
 from consts import MAX_STEPS
-
-
-def build_cnn_model(img_size):
-    img = Input(shape=(img_size, img_size, 1), name='img')
-    lstm_features = Input(shape=(4,), name='lstm')
-    iligal_move = Input(shape=(1,), name='iligal_move')
-
-    inputs = {'img': img,
-              'lstm': lstm_features,
-              'iligal_move': iligal_move}
-
-    y = Conv2D(filters=24, kernel_size=5, strides=1, padding='same')(img)
-    y = MaxPool2D(pool_size=(2, 2), strides=(2, 2), padding='same')(y)
-    y = Flatten()(y)
-    x = Concatenate()([y, lstm_features, iligal_move])
-    x = Dense(units=10, activation='tanh')(x)
-    x = Dense(units=4, activation='softmax')(x)
-    model = Model(inputs=inputs, outputs=x)
-
-    return model
-
-
-def build_lstm_model(time_stamps, feature_number):
-    lstm_input = Input(shape=(time_stamps, feature_number))
-    x = LSTM(units=3)(lstm_input)
-    x = Dense(units=4, activation='softmax')(x)
-    model = Model(inputs=lstm_input, outputs=x)
-    return model
 
 
 def build_dense_model(feature_number):
     # directions0-3, curr_direction4-7,end_near_indicator8-11,
-    # times_visited12-15
-    inputs = Input(shape=(feature_number,))
-    x = Dense(units=25, activation='relu')(inputs)
-    x = Dense(units=10, activation='relu')(x)
-    x = Dense(units=4, activation='softmax')(x)
-    model = Model(inputs=inputs, outputs=x)
+    # # times_visited12-15
+    dense1 = (np.sqrt(2/(10+feature_number)))*np.random.randn(10,
+                                                              feature_number)
+    bias1 = np.sqrt(2/10)*np.random.randn(10)
+    dense2 = (np.sqrt(2/(10+10)))*np.random.randn(10, 10)
+    bias2 = np.sqrt(2/10)*np.random.randn(10)
+    dense3 = (np.sqrt(2/(10+4)))*np.random.randn(4, 10)
+    bias3 = np.sqrt(2/10)*np.random.randn(4)
+    model = [(dense1, bias1), (dense2, bias2), (dense3, bias3)]
     return model
+
+
+def _softmax(x):
+    exp = np.exp(x)
+    sums = np.sum(exp, axis=0, keepdims=True) + 1e-10
+    return exp/sums
+
+
+def _sigmond(x):
+    return (1/(1+np.exp(-x)))
+
+
+def _predict_dense(model, x):
+    a = x
+    for w, b in model[:-1]:
+        a = w.dot(a) + b.reshape(-1, 1)
+        # a[a < 0] = 0  #  relu
+        # a = _sigmond(a)
+        a = np.tanh(a)
+    w, b = model[-1]
+    a = w.dot(a) + b.reshape(-1, 1)
+    return _softmax(a)
 
 
 class Agent_Model():
 
-    def __init__(self, net_type, img_size):
+    def __init__(self, algorithm_type, img_size):
         self.img_size = img_size
-        self.net_type = net_type
-        if net_type == 'cnn':
-            self.model = build_cnn_model(img_size=img_size)
-        else:
-            self.model = build_dense_model(feature_number=16)
+        self.algorithm_type = algorithm_type
+        self.model = build_dense_model(feature_number=16)
 
     def predict(self, lstm_featuers=None, oposite_direction=None,
                 end_near_indicator=None, img=None,
                 iligal_move=None, times_visited=None):
-        if self.net_type == 'cnn':
-            img = img / 255
-            inputs = {'img': img,
-                      'lstm': lstm_featuers.reshape(1, 4),
-                      'iligal_move': iligal_move}
-
-            pred = self.model.predict(inputs)
-        else:
-            featuers = np.concatenate((lstm_featuers,
-                                       oposite_direction,
-                                       end_near_indicator,
-                                       times_visited)).reshape(1, -1)
-            pred = self.model.predict(featuers)
-
-        idx = np.argmax(pred, axis=1)
+        featuers = np.concatenate((lstm_featuers,
+                                   oposite_direction,
+                                   end_near_indicator,
+                                   times_visited)).reshape(-1, 1)
+        pred = _predict_dense(self.model, featuers)
+        idx = np.argmax(pred, axis=0)
         return idx
 
     def get_weights(self):
         weights = []
-        for layer in self.model.layers[1:]:
-            layer_weights = layer.get_weights()
-            if len(layer_weights) != 0:
-                if layer.name[:6] == 'conv2d':
-                    s = layer_weights[0].shape
-                    weights.append(layer_weights[
-                        0].reshape(s[3]*s[0], s[0]))
-                    weights.append(layer_weights[1].reshape(-1, 1))
-                if layer.name[:4] == 'lstm':
-                    weights.append(layer_weights[0])
-                    weights.append(layer_weights[1])
-                    weights.append(layer_weights[2].reshape(-1, 1))
-                if layer.name[:5] == 'dense':
-                    weights.append(layer_weights[0])
-                    weights.append(layer_weights[1].reshape(-1, 1))
-        return weights
+        for w, b in self.model:
+            weights.append(w.reshape(-1))
+            weights.append(b.reshape(-1))
+        return np.concatenate(weights)
 
     def set_weights(self, weights):
         counter = 0
-        for layer in self.model.layers[1:]:
-            layer_weights = layer.get_weights()
-            if len(layer_weights) != 0:
-                w = []
-                if layer.name[:6] == 'conv2d':
-                    fillters = weights[counter].reshape((5, 5, 1, 24))
-                    w.append(fillters)
-                    w.append(weights[counter+1].reshape(-1))
-                    counter += 2
-                if layer.name[:4] == 'lstm':
-                    w.append(weights[counter])
-                    w.append(weights[counter+1])
-                    w.append(weights[counter+2].reshape(-1))
-                    counter += 3
-                if layer.name[:5] == 'dense':
-                    w.append(weights[counter])
-                    w.append(weights[counter+1].reshape(-1))
-                    counter += 2
-                layer.set_weights(w)
+        weights = np.array(weights)
+        for i, (w, b) in enumerate(self.model):
+            reshaped_w = weights[counter: counter +
+                                 np.prod(w.shape)].reshape(w.shape)
+            counter += np.prod(w.shape)
+            reshaped_b = weights[counter: counter+np.prod(b.shape)]
+            counter += np.prod(b.shape)
+            self.model[i] = (reshaped_w, reshaped_b)
 
     def save(self, filename='weights.pkl'):
         with open(filename, 'wb') as fp:

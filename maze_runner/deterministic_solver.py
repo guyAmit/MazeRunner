@@ -48,7 +48,6 @@ def run_maze(maze, debug):
     full_maze = maze[1]
     curr_pos = np.array(STRARTING_POSINGTION)
     prev_pos = curr_pos.copy()
-    score = 0
     curr_dirr = 1
     memeory = np.zeros(full_maze.shape)
     memeory[0, 0] = 1
@@ -61,43 +60,25 @@ def run_maze(maze, debug):
                        directions_features, end_near, memeory)
         curr_dirr = pred
         pred = convert_to_directions(pred)
-        iligal_move = 0
-        if (curr_pos[0] + pred[0] >= current_maze.shape[0] or
-            curr_pos[1] + pred[1] >= current_maze.shape[1] or
-                curr_pos[0] + pred[0] < 0 or curr_pos[1] + pred[1] < 0):
-            score += 7  # out of maze
-            score += iligal_move
-            iligal_move += 1
-            # return score
-        elif current_maze[curr_pos[0] + pred[0], curr_pos[1]+pred[1]] == END:
+        if current_maze[curr_pos[0] + pred[0], curr_pos[1]+pred[1]] == END:
             # maze ending bonus
-            return score-10*i, 1
-        elif current_maze[curr_pos[0] + pred[0], curr_pos[1]+pred[1]] == WALL:
-            score += 7  # run into wall
-            score += iligal_move
-            iligal_move += 1
-            # return score
+            return i, 1
         elif current_maze[curr_pos[0] + pred[0],
                           curr_pos[1]+pred[1]] >= VISITED_POS:
-            score += memeory[curr_pos[0]+pred[0], curr_pos[1]+pred[1]]
-            prev_pos = curr_pos.copy()
             curr_pos[0] += pred[0]
             curr_pos[1] += pred[1]
         else:
-            score += 1
             prev_pos = curr_pos.copy()
             curr_pos[0] += pred[0]
             curr_pos[1] += pred[1]
         memeory[curr_pos[0], curr_pos[1]] += 1
-        new_tiels = update_maze(current_maze, full_maze, new_pos=curr_pos,
-                                old_pos=prev_pos)
-        if new_tiels > 0:
-            score -= 20
+        update_maze(current_maze, full_maze, new_pos=curr_pos,
+                    old_pos=prev_pos)
         if debug is True:
             plt.matshow(current_maze)
             plt.show()
     del maze, memeory
-    return score, 0
+    return i, 0
 
 
 def get_reward():
@@ -138,4 +119,8 @@ def get_oposite_direction(i):
 
 if __name__ == '__main__':
     # run_maze(mazes[0], debug=False)
+    import time
+    t0 = time.clock()
     print(get_reward())
+    t = time.clock()
+    print((t-t0)/20)
